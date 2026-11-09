@@ -1,0 +1,55 @@
+from shade.models import HintDelta, HintDone, HintError, HintStarted, Usage, Utterance, UtteranceAdded
+from shade.ui.hint_view import HintView
+
+
+def test_deltas_accumulate_into_current_hint(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    v.handle(HintStarted(1, "auto", "Why?"))
+    v.handle(HintDelta(1, "Because "))
+    v.handle(HintDelta(1, "it is fast."))
+    assert v.current_text() == "Because it is fast."
+
+
+def test_delta_of_old_hint_ignored(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    v.handle(HintStarted(1, "auto", "Q1"))
+    v.handle(HintStarted(2, "hotkey", "Q2"))
+    v.handle(HintDelta(1, "stale"))
+    v.handle(HintDelta(2, "fresh"))
+    assert v.current_text() == "fresh"
+
+
+def test_done_moves_hint_to_history_and_shows_cost(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    v.handle(HintStarted(1, "auto", "Q1"))
+    v.handle(HintDelta(1, "A1"))
+    v.handle(HintDone(1, "m", Usage(1, 1), 0.001, 0.0123))
+    assert v.history_count() == 1
+    assert "$0.0123" in v.status_text()
+
+
+def test_error_shown(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    v.handle(HintError(1, "Claude: cannot connect."))
+    assert "Claude: cannot connect." in v.error_text()
+
+
+def test_dismiss_clears_current(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    v.handle(HintStarted(1, "auto", "Q"))
+    v.handle(HintDelta(1, "text"))
+    v.dismiss()
+    assert v.current_text() == ""
+
+
+def test_transcript_lines(qtbot):
+    v = HintView(transcript_lines=2)
+    qtbot.addWidget(v)
+    for i in range(3):
+        v.handle(UtteranceAdded(Utterance("them", f"line {i}", i, i + 1)))
+    assert v.transcript_text().splitlines() == ["[00:01] Them: line 1", "[00:02] Them: line 2"]
