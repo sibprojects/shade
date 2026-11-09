@@ -27,8 +27,10 @@ from shade.session import SessionWriter
 from shade.stt import SttWorker, Transcriber
 from shade.transcript import Transcript
 from shade.ui.bridge import QtBridge
+from shade.ui.hotkeys import HotkeyManager
 from shade.ui.main_window import MainWindow
 from shade.ui.overlay import Overlay
+from shade.ui.region_select import RegionSelector
 
 CAPTURE_WARNING = "Warning: window may be visible in screen sharing."
 
@@ -115,9 +117,44 @@ class ShadeApp(QObject):
         self._build_menu()
         self.tray.show()
 
+        self.region = RegionSelector()
+        self.region.selected.connect(self._on_screenshot)
+        self.hotkeys = HotkeyManager()
+        self.hotkeys.triggered.connect(self.on_hotkey)
+        self.hotkeys.error.connect(lambda msg: self.bridge.emit_event(Status(msg)))
+        self.hotkeys.start(self.settings.hotkeys)
+
         self.transcriber_ready.connect(self._on_transcriber_ready)
         self.transcriber_failed.connect(self._on_transcriber_failed)
         threading.Thread(target=self._load_transcriber, daemon=True).start()
+
+    # ---- hotkeys --------------------------------------------------------
+
+    def on_hotkey(self, action: str) -> None:
+        if action == "toggle_view":
+            self.toggle_view()
+        elif action == "click_through":
+            self.overlay.set_click_through(not self.overlay.click_through)
+            self.settings.click_through = self.overlay.click_through
+            save_settings(self.settings, self.settings_path)
+            state = "on" if self.overlay.click_through else "off"
+            self.bridge.emit_event(Status(f"Click-through {state}"))
+        elif action == "dismiss":
+            self.window.view.dismiss()
+            self.overlay.view.dismiss()
+        elif action == "toggle_auto":
+            self.set_auto(not self.settings.auto_enabled)
+            self.bridge.emit_event(Status(f"Auto hints {'on' if self.settings.auto_enabled else 'off'}"))
+        elif not self.session:
+            self.bridge.emit_event(Status("Start a session first."))
+        elif action == "ask":
+            self.session.engine.ask_now()
+        elif action == "screenshot":
+            self.region.start()
+
+    def _on_screenshot(self, png: bytes) -> None:
+        if self.session:
+            self.session.engine.ask_with_image(png)
 
     # ---- speech model ---------------------------------------------------
 
@@ -255,6 +292,7 @@ class ShadeApp(QObject):
         os.startfile(folder.resolve())  # noqa: S606 (Windows only)
 
     def quit(self) -> None:
+        self.hotkeys.stop()
         self.stop_session()
         self.tray.hide()
         self.qapp.quit()
