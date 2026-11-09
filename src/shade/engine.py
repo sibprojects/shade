@@ -10,6 +10,7 @@ Cancel/replace policy:
 from __future__ import annotations
 
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Callable
@@ -34,6 +35,9 @@ from shade.session import SessionWriter
 from shade.transcript import Transcript
 
 NO_VISION = "Selected local model does not support images."
+# A queued detection older than this is skipped: its hint would arrive too late.
+STALE_DETECT_S = 10.0
+STOP_JOIN_S = 2.0
 
 
 @dataclass
@@ -69,6 +73,7 @@ class Engine:
         self.on_event = on_event
         self.clock = clock
         self.auto_enabled = True
+        self._stopped = False
         self._lock = threading.Lock()
         self._next_id = 0
         self._current: _Run | None = None
@@ -121,10 +126,17 @@ class Engine:
         return True
 
     def stop(self) -> None:
+        """Stop accepting work, cancel the running hint and give it a moment to
+        save its partial answer before the caller closes the session files."""
         with self._lock:
-            if self._current:
-                self._current.cancel.set()
+            self._stopped = True
+            runs = [r for r in self._runs if r.alive()]
+            for r in runs:
+                r.cancel.set()
         self._detect_pool.shutdown(wait=False, cancel_futures=True)
+        deadline = time.monotonic() + STOP_JOIN_S
+        for r in runs:
+            r.thread.join(max(0.0, deadline - time.monotonic()))
 
     # ---- internals ----------------------------------------------------
 
@@ -135,6 +147,8 @@ class Engine:
             self.on_event(Status(f"Internal error: {e}"))
 
     def _detect(self, u: Utterance) -> None:
+        if self._stopped or self.clock() - u.end > STALE_DETECT_S:
+            return
         recent = self.transcript.window(self.clock(), self.context_seconds)
         question = self.detector.check(u, recent)
         if question and self.auto_enabled:
@@ -142,6 +156,8 @@ class Engine:
 
     def _start(self, trigger: Trigger, question: str, image: bytes | None) -> None:
         with self._lock:
+            if self._stopped:
+                return
             cur = self._current
             if cur and cur.alive() and not cur.cancel.is_set():
                 if trigger == "auto" and cur.req.trigger != "auto":

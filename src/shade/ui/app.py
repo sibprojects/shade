@@ -21,9 +21,8 @@ from shade.config import DEFAULT_SETTINGS_PATH, Settings, load_settings, save_se
 from shade.cost import CostMeter
 from shade.detect import Detector
 from shade.engine import Engine
-from shade.llm.base import ProviderError
-from shade.llm.factory import make_provider
-from shade.models import Status
+from shade.llm.factory import make_provider_or_unavailable
+from shade.models import HintError, Status
 from shade.session import SessionWriter
 from shade.stt import SttWorker, Transcriber
 from shade.transcript import Transcript
@@ -61,13 +60,16 @@ class Session:
     """Everything that lives for the duration of one call."""
 
     def __init__(self, settings: Settings, transcriber, profile: Path, bridge: QtBridge) -> None:
-        provider = make_provider(settings)  # may raise ProviderError
+        # A provider that can't be built (e.g. missing key) still lets the session
+        # transcribe; every hint then shows the reason in the hint area.
+        provider, self.provider_problem = make_provider_or_unavailable(settings)
+        status = lambda msg: bridge.emit_event(Status(msg))  # noqa: E731
         start = time.monotonic()
         clock = lambda: time.monotonic() - start  # noqa: E731
         self.writer = SessionWriter(Path(settings.sessions_dir), profile.stem, datetime.now())
         self.engine = Engine(
             provider=provider,
-            detector=Detector(provider),
+            detector=Detector(provider, on_error=status),
             transcript=Transcript(),
             writer=self.writer,
             cost=CostMeter(settings.prices),
@@ -77,7 +79,6 @@ class Session:
             clock=clock,
         )
         self.engine.set_auto(settings.auto_enabled)
-        status = lambda msg: bridge.emit_event(Status(msg))  # noqa: E731
         self.stt = SttWorker(transcriber, self.engine.on_utterance, on_error=status)
         self.sources = []
         for name, cls, device in (
@@ -260,17 +261,16 @@ class ShadeApp(QObject):
             self.load_transcriber()
             self.notify("Speech model is still loading — try again in a moment.")
             return
-        try:
-            self.session = Session(self.settings, self.transcriber, profile, self.bridge)
-        except ProviderError as e:
-            self.notify(str(e))
-            return
+        self.session = Session(self.settings, self.transcriber, profile, self.bridge)
         self.stop_action.setEnabled(True)
         self._vram_warned = False
         self.vram_timer.start()
         self.tray.setToolTip(f"Shade — session: {profile.stem}")
         self.show_current_view()
         self.bridge.emit_event(Status(f"Session started: {profile.stem}"))
+        if self.session.provider_problem:
+            self.bridge.emit_event(HintError(0, self.session.provider_problem))
+            self.notify(self.session.provider_problem)
 
     def stop_session(self) -> None:
         if not self.session:

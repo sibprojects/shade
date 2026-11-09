@@ -16,9 +16,18 @@ FALLBACK_MODELS = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-fable-5-1", "
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 
+ANSWER_TIMEOUT = 30.0
+DETECT_TIMEOUT = 10.0
+KEY_MESSAGE = "Claude: invalid or missing ANTHROPIC_API_KEY."
+
+
 def _map_error(e: Exception) -> ProviderError:
-    if isinstance(e, anthropic.AuthenticationError):
-        return ProviderError("Claude: invalid or missing ANTHROPIC_API_KEY.")
+    if isinstance(e, ProviderError):
+        return e
+    if isinstance(e, anthropic.AuthenticationError) or (
+        isinstance(e, TypeError) and "authentication" in str(e).lower()
+    ):
+        return ProviderError(KEY_MESSAGE)
     if isinstance(e, anthropic.APIConnectionError):
         return ProviderError("Claude: cannot connect.")
     if isinstance(e, anthropic.APIStatusError):
@@ -39,7 +48,7 @@ class ClaudeProvider:
     @property
     def client(self):
         if self._client is None:
-            self._client = anthropic.Anthropic()
+            self._client = anthropic.Anthropic(timeout=ANSWER_TIMEOUT, max_retries=1)
         return self._client
 
     def stream_answer(
@@ -73,7 +82,7 @@ class ClaudeProvider:
                     if cancel.is_set():
                         return
                 final = stream.get_final_message()
-        except anthropic.AnthropicError as e:
+        except Exception as e:  # SDK raises TypeError (not AnthropicError) for missing credentials
             raise _map_error(e) from e
         u = final.usage
         self.last_usage = Usage(
@@ -84,13 +93,17 @@ class ClaudeProvider:
 
     def detect(self, system: str, user_text: str) -> str:
         try:
-            msg = self.client.messages.create(
+            client = self.client
+            if hasattr(client, "with_options"):
+                client = client.with_options(timeout=DETECT_TIMEOUT)
+            msg = client.messages.create(
                 model=self.detector_model,
-                max_tokens=100,
+                # Room for adaptive thinking, which counts toward max_tokens.
+                max_tokens=1024,
                 system=system,
                 messages=[{"role": "user", "content": user_text}],
                 output_config={"effort": "low"},
             )
-        except anthropic.AnthropicError as e:
+        except Exception as e:
             raise _map_error(e) from e
         return "".join(b.text for b in msg.content if b.type == "text")
