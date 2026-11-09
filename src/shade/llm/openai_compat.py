@@ -11,6 +11,9 @@ import openai
 from shade.llm.base import ProviderError
 from shade.models import Usage
 
+ANSWER_TIMEOUT = 30.0
+DETECT_TIMEOUT = 10.0
+
 
 class OpenAIProvider:
     def __init__(
@@ -35,10 +38,14 @@ class OpenAIProvider:
     @property
     def client(self):
         if self._client is None:
-            self._client = openai.OpenAI(base_url=self.base_url, api_key=self.api_key)
+            self._client = openai.OpenAI(
+                base_url=self.base_url, api_key=self.api_key, timeout=ANSWER_TIMEOUT, max_retries=1
+            )
         return self._client
 
     def _map_error(self, e: Exception) -> ProviderError:
+        if isinstance(e, ProviderError):
+            return e
         if isinstance(e, openai.AuthenticationError):
             return ProviderError(f"{self.label}: invalid API key.")
         if isinstance(e, openai.APIConnectionError):
@@ -79,19 +86,22 @@ class OpenAIProvider:
                     yield ch.choices[0].delta.content
                     if cancel.is_set():
                         return
-        except openai.OpenAIError as e:
+        except Exception as e:
             raise self._map_error(e) from e
 
     def detect(self, system: str, user_text: str) -> str:
         try:
-            resp = self.client.chat.completions.create(
+            client = self.client
+            if hasattr(client, "with_options"):
+                client = client.with_options(timeout=DETECT_TIMEOUT)
+            # No max_tokens: reasoning models reject it; the reply is one line anyway.
+            resp = client.chat.completions.create(
                 model=self.detector_model,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user_text},
                 ],
-                max_tokens=100,
             )
-        except openai.OpenAIError as e:
+        except Exception as e:
             raise self._map_error(e) from e
         return resp.choices[0].message.content or ""

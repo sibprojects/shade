@@ -22,10 +22,10 @@ def test_last_question_joins_trailing_them():
     assert t.last_question() == "So tell me about your last project"
 
 
-def test_last_question_none_after_me():
+def test_last_question_none_when_only_me_spoke():
     t = Transcript()
-    t.add(_u("them", "q?", 0, 1))
-    t.add(_u("me", "answer", 2, 3))
+    t.add(_u("me", "hello", 0, 1))
+    t.add(_u("me", "anyone there?", 2, 3))
     assert t.last_question() is None
 
 

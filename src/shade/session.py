@@ -35,6 +35,8 @@ class SessionWriter:
 
     def _write(self, f, text: str) -> None:
         with self._lock:
+            if f.closed:
+                return  # late write after the session stopped
             f.write(text)
             f.flush()
 

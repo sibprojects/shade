@@ -55,13 +55,20 @@ class _Source:
         self.clock = clock or (lambda: time.monotonic() - start)
         self._on_audio: OnAudio | None = None
         self._resampler: Resampler | None = None
+        self._failed = False
 
     def _deliver(self, block: np.ndarray, in_rate: int) -> None:
-        # Time of the block's first sample = now minus the block duration.
-        t0 = self.clock() - len(block) / in_rate
-        out = self._resampler.process(block)
-        if len(out) and self._on_audio:
-            self._on_audio(out, t0)
+        if self._failed:
+            return
+        try:
+            # Time of the block's first sample = now minus the block duration.
+            t0 = self.clock() - len(block) / in_rate
+            out = self._resampler.process(block)
+            if len(out) and self._on_audio:
+                self._on_audio(out, t0)
+        except Exception as e:  # never let an exception escape the audio callback
+            self._failed = True
+            self._fail(e)
 
     def _fail(self, e: Exception) -> None:
         self.on_error(f"{self.label} unavailable: {e}")

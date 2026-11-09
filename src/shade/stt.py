@@ -86,4 +86,7 @@ class SttWorker:
                 continue
             if is_junk(text):
                 continue
-            self.on_utterance(Utterance(source, text.strip(), start, end))
+            try:
+                self.on_utterance(Utterance(source, text.strip(), start, end))
+            except Exception as e:
+                self.on_error(f"Transcript error: {e}")

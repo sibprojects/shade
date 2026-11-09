@@ -40,9 +40,10 @@ class Transcript:
         with self._lock:
             parts: list[str] = []
             for u in reversed(self._items):
-                if u.source != "them":
-                    break
-                parts.append(u.text)
+                if u.source == "them":
+                    parts.append(u.text)
+                elif parts:
+                    break  # the run of "them" before the user's own reply
         if not parts:
             return None
         return " ".join(reversed(parts))
