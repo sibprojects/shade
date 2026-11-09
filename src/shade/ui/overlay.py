@@ -1,0 +1,61 @@
+"""Semi-transparent always-on-top overlay mode."""
+
+from __future__ import annotations
+
+from PySide6.QtCore import QPoint, QSettings, Qt
+from PySide6.QtWidgets import QVBoxLayout, QWidget
+
+from shade.ui.capture_guard import CaptureExcluded
+from shade.ui.hint_view import HintView
+
+BASE_FLAGS = (
+    Qt.WindowType.FramelessWindowHint
+    | Qt.WindowType.WindowStaysOnTopHint
+    | Qt.WindowType.Tool
+)
+
+
+class Overlay(CaptureExcluded, QWidget):
+    def __init__(self, opacity: float = 0.85, click_through: bool = False) -> None:
+        super().__init__(None, BASE_FLAGS)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setWindowOpacity(opacity)
+        self.setObjectName("overlay")
+        self.setStyleSheet(
+            "#overlay { background: transparent; }"
+            "QTextBrowser, QPlainTextEdit { background: rgba(16, 18, 24, 215); color: #f2f2f2;"
+            " border: 1px solid rgba(255,255,255,40); border-radius: 8px; }"
+            "QLabel { color: #f2f2f2; background: rgba(16,18,24,180); border-radius: 4px;"
+            " padding: 2px 6px; }"
+        )
+        self.view = HintView(transcript_lines=3, show_history=False, font_size=15)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.view)
+        self.resize(520, 420)
+        pos = QSettings("Shade", "Shade").value("overlay/pos")
+        if pos is not None:
+            self.move(pos)
+        self._drag_from: QPoint | None = None
+        self.click_through = False
+        self.set_click_through(click_through)
+
+    def set_click_through(self, on: bool) -> None:
+        self.click_through = on
+        visible = self.isVisible()
+        self.setWindowFlag(Qt.WindowType.WindowTransparentForInput, on)
+        if visible:
+            self.show()  # flag changes hide the window and recreate it
+
+    # Drag anywhere to move (when not click-through).
+    def mousePressEvent(self, e):  # noqa: N802
+        if e.button() == Qt.MouseButton.LeftButton:
+            self._drag_from = e.globalPosition().toPoint() - self.frameGeometry().topLeft()
+
+    def mouseMoveEvent(self, e):  # noqa: N802
+        if self._drag_from is not None:
+            self.move(e.globalPosition().toPoint() - self._drag_from)
+
+    def mouseReleaseEvent(self, e):  # noqa: N802
+        self._drag_from = None
+        QSettings("Shade", "Shade").setValue("overlay/pos", self.pos())
