@@ -9,14 +9,15 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QFileDialog, QMenu, QSystemTrayIcon
 
-from shade.audio.capture import LoopbackSource, MicSource
+from shade import gpu
+from shade.audio.capture import LoopbackSource, MicSource, list_devices
 from shade.audio.segmenter import Segmenter
 from shade.audio.vad import SileroVad
-from shade.config import DEFAULT_SETTINGS_PATH, Settings, load_settings, save_settings
+from shade.config import DEFAULT_SETTINGS_PATH, Settings, load_settings, save_settings, stt_config
 from shade.cost import CostMeter
 from shade.detect import Detector
 from shade.engine import Engine
@@ -31,8 +32,11 @@ from shade.ui.hotkeys import HotkeyManager
 from shade.ui.main_window import MainWindow
 from shade.ui.overlay import Overlay
 from shade.ui.region_select import RegionSelector
+from shade.ui.settings_dialog import SettingsDialog
 
 CAPTURE_WARNING = "Warning: window may be visible in screen sharing."
+VRAM_WARNING = "GPU memory almost full — hints may lag."
+NEXT_SESSION = "Applies to the next session."
 
 
 def make_icon() -> QIcon:
@@ -106,6 +110,12 @@ class ShadeApp(QObject):
         self.bridge = QtBridge()
         self.session: Session | None = None
         self.transcriber = None
+        self.transcriber_config: tuple[str, str] | None = None
+        self._loading = False
+        self._vram_warned = False
+        self.vram_timer = QTimer()
+        self.vram_timer.setInterval(10_000)
+        self.vram_timer.timeout.connect(self._check_vram)
 
         self.window = MainWindow()
         self.overlay = Overlay(self.settings.overlay_opacity, self.settings.click_through)
@@ -126,7 +136,7 @@ class ShadeApp(QObject):
 
         self.transcriber_ready.connect(self._on_transcriber_ready)
         self.transcriber_failed.connect(self._on_transcriber_failed)
-        threading.Thread(target=self._load_transcriber, daemon=True).start()
+        self.load_transcriber()
 
     # ---- hotkeys --------------------------------------------------------
 
@@ -158,21 +168,31 @@ class ShadeApp(QObject):
 
     # ---- speech model ---------------------------------------------------
 
-    def stt_config(self) -> tuple[str, str]:
-        return self.settings.stt_model, self.settings.stt_compute
+    def load_transcriber(self) -> None:
+        """(Re)load the speech model for the current provider in the background."""
+        config = stt_config(self.settings)
+        if self._loading or config == self.transcriber_config:
+            return
+        self._loading = True
+        self.transcriber = None
+        self.tray.setToolTip(f"Shade — loading speech model ({config[0]})…")
 
-    def _load_transcriber(self) -> None:
-        try:
-            model, compute = self.stt_config()
-            self.transcriber_ready.emit(Transcriber(model, compute))
-        except Exception as e:
-            self.transcriber_failed.emit(str(e))
+        def work():
+            try:
+                self.transcriber_ready.emit((config, Transcriber(*config)))
+            except Exception as e:
+                self.transcriber_failed.emit(str(e))
 
-    def _on_transcriber_ready(self, transcriber) -> None:
-        self.transcriber = transcriber
+        threading.Thread(target=work, daemon=True).start()
+
+    def _on_transcriber_ready(self, result) -> None:
+        self._loading = False
+        self.transcriber_config, self.transcriber = result
         self.tray.setToolTip("Shade — ready")
+        self.load_transcriber()  # settings may have changed while loading
 
     def _on_transcriber_failed(self, message: str) -> None:
+        self._loading = False
         self.tray.setToolTip("Shade — speech model failed")
         self.notify(f"Speech model failed to load: {message}")
 
@@ -200,6 +220,7 @@ class ShadeApp(QObject):
             view_menu.addAction(a)
             self.view_actions[mode] = a
         menu.addAction("Show", self.show_current_view)
+        menu.addAction("Settings…", self.open_settings)
         menu.addAction("Open sessions folder", self.open_sessions_folder)
         menu.addSeparator()
         menu.addAction("Quit", self.quit)
@@ -235,7 +256,8 @@ class ShadeApp(QObject):
     def start_session(self, profile: Path) -> None:
         if self.session:
             self.stop_session()
-        if self.transcriber is None:
+        if self.transcriber is None or self.transcriber_config != stt_config(self.settings):
+            self.load_transcriber()
             self.notify("Speech model is still loading — try again in a moment.")
             return
         try:
@@ -244,6 +266,8 @@ class ShadeApp(QObject):
             self.notify(str(e))
             return
         self.stop_action.setEnabled(True)
+        self._vram_warned = False
+        self.vram_timer.start()
         self.tray.setToolTip(f"Shade — session: {profile.stem}")
         self.show_current_view()
         self.bridge.emit_event(Status(f"Session started: {profile.stem}"))
@@ -251,6 +275,7 @@ class ShadeApp(QObject):
     def stop_session(self) -> None:
         if not self.session:
             return
+        self.vram_timer.stop()
         self.session.stop()
         self.session = None
         self.stop_action.setEnabled(False)
@@ -285,6 +310,38 @@ class ShadeApp(QObject):
 
     def toggle_view(self) -> None:
         self.set_display_mode("window" if self.settings.display_mode == "overlay" else "overlay")
+
+    def _check_vram(self) -> None:
+        if not self._vram_warned and gpu.vram_nearly_full(gpu.vram()):
+            self._vram_warned = True
+            self.bridge.emit_event(Status(VRAM_WARNING))
+
+    def open_settings(self) -> None:
+        dialog = SettingsDialog(self.settings, list_devices())
+        if not dialog.exec():
+            return
+        new = dialog.result_settings()
+        old = self.settings
+        self.settings = new
+        save_settings(new, self.settings_path)
+        # Display and behavior apply now.
+        self.overlay.setWindowOpacity(new.overlay_opacity)
+        if new.click_through != self.overlay.click_through:
+            self.overlay.set_click_through(new.click_through)
+        self.set_auto(new.auto_enabled)
+        if new.hotkeys != old.hotkeys:
+            self.hotkeys.start(new.hotkeys)
+        if new.display_mode != old.display_mode:
+            self.set_display_mode(new.display_mode)
+        # Provider, models and audio apply to the next session.
+        session_keys = (
+            "provider", "claude_model", "claude_effort", "claude_detector_model", "presets",
+            "mic_device", "loopback_device", "vad_silence_ms", "context_seconds", "prices",
+        )
+        if self.session and any(getattr(old, k) != getattr(new, k) for k in session_keys):
+            self.bridge.emit_event(Status(NEXT_SESSION))
+        if not self.session:
+            self.load_transcriber()
 
     def open_sessions_folder(self) -> None:
         folder = Path(self.settings.sessions_dir)

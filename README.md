@@ -6,7 +6,7 @@
 ![PySide6](https://img.shields.io/badge/UI-PySide6-41CD52?logo=qt&logoColor=white)
 ![faster-whisper](https://img.shields.io/badge/STT-faster--whisper-FF6F00)
 ![CUDA](https://img.shields.io/badge/GPU-CUDA%2012-76B900?logo=nvidia&logoColor=white)
-![Status](https://img.shields.io/badge/status-in%20development-orange)
+![Status](https://img.shields.io/badge/status-alpha-yellow)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Shade** is a real-time call assistant for Windows. It sits in the system
@@ -15,9 +15,8 @@ keeps a live English transcript, and streams a short answer you can say out
 loud within seconds of being asked a question — including tasks shown on the
 other side's screen.
 
-> **Status:** early development. The design is done; the code is being built
-> step by step (see [the plan](docs/superpowers/plans/2026-11-09-shade.md)).
-> Sections marked *planned* describe how it is designed to work.
+> **Status:** alpha. Everything below is implemented and covered by tests;
+> real-call behavior with each provider is still being measured.
 
 ## At a glance
 
@@ -118,7 +117,7 @@ switches to a lighter setup (`small.en`, int8) to leave VRAM for the model,
 and Shade warns when GPU memory is above 90%. Small quantized models
 (~3–8B, Q4) are recommended; for screenshots, use one with vision.
 
-## Hotkeys (planned defaults)
+## Hotkeys
 
 | Action | Keys |
 |---|---|
@@ -129,9 +128,10 @@ and Shade warns when GPU memory is above 90%. Small quantized models
 | Dismiss the current hint | `Ctrl+Alt+D` |
 | Toggle auto hints | `Ctrl+Alt+Q` |
 
-All hotkeys are global and can be changed in Settings.
+All hotkeys are global (they work while another app has focus) and can be
+changed in Settings. In the screenshot selector, Esc or a right click cancels.
 
-## Project layout (planned)
+## Project layout
 
 ```
 src/shade/
@@ -154,19 +154,50 @@ sessions/       saved calls (git-ignored)
 - NVIDIA GPU with CUDA 12 support (tested target: RTX 3070 Ti, 8 GB)
 - Headphones are recommended, so the microphone doesn't pick up the other side
 
-## Setup (planned)
+## Setup
 
 ```powershell
+git clone https://github.com/sibprojects/shade.git
+cd shade
 uv sync
+$env:ANTHROPIC_API_KEY = "sk-ant-..."   # or the key for the provider you use
 uv run python -m shade
 ```
+
+The first start downloads the speech model (`distil-large-v3`, ~1.5 GB) to
+the Hugging Face cache. A tray icon appears; when its tooltip says
+**ready**, right-click it → **Start session** → pick a profile.
+
+- **Profiles:** put your own `.md` files in `profiles/` (see
+  `profiles/example.md`) or use **Browse…**.
+- **Settings:** tray → **Settings…** (provider, models, display, audio
+  devices, hotkeys). Saved to `settings.toml` next to the app, without keys.
+- **Sessions:** tray → **Open sessions folder**.
+- **Local model:** run Ollama (`ollama pull qwen2.5vl:7b`) or LM Studio,
+  choose **Local model** in Settings and check the base URL
+  (`http://localhost:11434/v1` for Ollama, `http://localhost:1234/v1` for
+  LM Studio).
+- **Check audio only:** `uv run python scripts/smoke_audio.py` prints a live
+  *Me*/*Them* transcript with recognition time per phrase.
+
+## Measured
+
+On an RTX 3070 Ti (8 GB), Windows 11:
+
+| What | Result |
+|---|---|
+| Speech-to-text, `distil-large-v3` float16, 7.8 s phrase | 0.25 s |
+| Speech-to-text, `small.en` int8 (local-model mode), same phrase | 0.15 s |
+| End of speech → first hint word, excluding model time | ~0.8 s |
+
+Time to first token for each provider will be added after real calls.
 
 ## Development
 
 - **Environment:** uv, Python 3.11.
-- **Tests:** pytest. The core (transcript, segmenter, detector, engine,
-  providers, session files) is tested with fakes. Audio, GPU and UI get
-  scripted manual checks.
+- **Tests:** `uv run pytest`. The core (transcript, segmenter, detector,
+  engine, providers, session files) is tested with fakes; UI widgets with
+  pytest-qt. Audio, GPU, hotkeys and screen capture get scripted manual checks.
 - **Docs:** [design](docs/superpowers/specs/2026-11-09-shade-design.md) ·
   [implementation plan](docs/superpowers/plans/2026-11-09-shade.md)
 

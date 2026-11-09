@@ -23,6 +23,10 @@ def setup_cuda_dlls() -> None:
             os.environ["PATH"] = str(bin_dir) + os.pathsep + os.environ.get("PATH", "")
 
 
+def vram_nearly_full(v: tuple[int, int] | None, limit: float = 0.9) -> bool:
+    return bool(v) and v[1] > 0 and v[0] / v[1] > limit
+
+
 def vram() -> tuple[int, int] | None:
     """(used, total) bytes on GPU 0, or None if NVML is unavailable."""
     try:
