@@ -1,4 +1,12 @@
-from shade.config import Settings, load_settings, save_settings
+from shade.config import Settings, load_settings, save_settings, stt_config
+
+
+def test_stt_config_light_for_local():
+    assert stt_config(Settings(provider="local")) == ("small.en", "int8_float16")
+
+
+def test_stt_config_default_for_cloud():
+    assert stt_config(Settings()) == ("distil-large-v3", "float16")
 
 
 def test_missing_file_creates_defaults(tmp_path):

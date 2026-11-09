@@ -83,6 +83,13 @@ class Settings:
     prices: dict[str, list[float]] = field(default_factory=lambda: copy.deepcopy(DEFAULT_PRICES))
 
 
+def stt_config(s: Settings) -> tuple[str, str]:
+    """Speech model and compute type; lighter when a local LLM shares the GPU."""
+    if s.provider == "local":
+        return s.stt_model_light, s.stt_compute_light
+    return s.stt_model, s.stt_compute
+
+
 def _merge_presets(saved: dict) -> dict[str, dict]:
     merged = copy.deepcopy(DEFAULT_PRESETS)
     for key, values in saved.items():
