@@ -2,18 +2,18 @@
 
 ## About me
 
-- Role: senior Python backend developer, 7 years of experience.
-- Strong: FastAPI, PostgreSQL, Redis, async I/O, system design, AWS.
-- Weaker: frontend, mobile. Say so honestly if asked.
+- Background: MSc in applied mathematics, 5 years of teaching and tutoring.
+- Strong: calculus, linear algebra, probability and statistics.
+- Weaker: abstract algebra and topology. Say so honestly if asked.
 
 ## This call
 
-- Type: technical interview for a Senior Backend Engineer role.
-- Audience: engineering manager and a staff engineer.
-- Topic: system design, Python internals, past projects.
+- Type: interview.
+- Audience: two interviewers.
+- Topic: math questions — derivatives, integrals, probability, quick estimates.
 
 ## How to answer
 
-- Sound confident and concrete; give a real example from experience when possible.
-- Prefer trade-offs over absolute statements.
-- Avoid buzzwords and long lists.
+- Give the result first, then one line on how you got it.
+- Show the key formula; keep the arithmetic short and checkable.
+- Avoid long derivations unless asked.
