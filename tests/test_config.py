@@ -49,3 +49,7 @@ def test_presets_merge(tmp_path):
     assert s.presets["grok"]["model"] == "x"
     assert s.presets["grok"]["base_url"] == "https://api.x.ai/v1"
     assert set(s.presets) == {"openai", "grok", "groq", "deepseek", "gemini", "local", "custom"}
+
+
+def test_default_end_of_phrase_pause_is_one_second():
+    assert Settings().vad_silence_ms == 1000

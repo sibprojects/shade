@@ -78,7 +78,7 @@ class Settings:
     stt_compute: str = "float16"
     stt_model_light: str = "small.en"
     stt_compute_light: str = "int8_float16"
-    vad_silence_ms: int = 600
+    vad_silence_ms: int = 1000
     context_seconds: int = 180
     profiles_dir: str = "profiles"
     sessions_dir: str = "sessions"
