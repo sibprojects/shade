@@ -31,8 +31,8 @@ Settings → Display.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/hint-window-day.png" alt="Hint window, day theme" width="400"></td>
-    <td align="center"><img src="docs/images/hint-window-night.png" alt="Hint window, night theme" width="400"></td>
+    <td align="center"><img src="docs/images/hint-window-day-2.png" alt="Hint window, day theme" width="400"></td>
+    <td align="center"><img src="docs/images/hint-window-night-2.png" alt="Hint window, night theme" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Window — Day theme</b></td>
@@ -49,8 +49,8 @@ the text itself stays fully opaque.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/overlay-dark.png" alt="Overlay, dark background" width="400"></td>
-    <td align="center"><img src="docs/images/overlay-light.png" alt="Overlay, light background with dark text" width="400"></td>
+    <td align="center"><img src="docs/images/overlay-dark-2.png" alt="Overlay, dark background" width="400"></td>
+    <td align="center"><img src="docs/images/overlay-light-2.png" alt="Overlay, light background with dark text" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Overlay — dark background, light text</b></td>
@@ -63,24 +63,24 @@ gem with an **S**). Right-click it for the menu; **Settings…** has four tabs.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/tray-menu.png" alt="Tray menu" height="290"></td>
-    <td align="center"><img src="docs/images/settings-model.png" alt="Settings: Model tab with Claude" width="400"></td>
+    <td align="center"><img src="docs/images/tray-menu-2.png" alt="Tray menu" height="290"></td>
+    <td align="center"><img src="docs/images/settings-model-2.png" alt="Settings: Model tab with Claude" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Tray menu</b></td>
     <td align="center"><b>Model — Claude</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/settings-model-grok.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
-    <td align="center"><img src="docs/images/settings-display.png" alt="Settings: Display tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-model-grok-2.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
+    <td align="center"><img src="docs/images/settings-display-2.png" alt="Settings: Display tab" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Model — Grok (OpenAI-compatible)</b></td>
     <td align="center"><b>Display — theme, font sizes, overlay colors and opacity</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/settings-audio.png" alt="Settings: Audio tab" width="400"></td>
-    <td align="center"><img src="docs/images/settings-hotkeys.png" alt="Settings: Hotkeys tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-audio-2.png" alt="Settings: Audio tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-hotkeys-2.png" alt="Settings: Hotkeys tab" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Audio — devices, mic gain and level, pause, context</b></td>
