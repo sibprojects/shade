@@ -46,6 +46,7 @@ DEFAULT_HOTKEYS = {
     "ask": "<ctrl>+<alt>+a",
     "screenshot": "<ctrl>+<alt>+s",
     "toggle_view": "<ctrl>+<alt>+v",
+    "toggle_overlay": "<ctrl>+<alt>+o",
     "click_through": "<ctrl>+<alt>+c",
     "dismiss": "<ctrl>+<alt>+d",
     "toggle_auto": "<ctrl>+<alt>+q",

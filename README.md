@@ -40,7 +40,9 @@ Settings → Display.
 </table>
 
 **Overlay** — the same hint on a semi-transparent layer over the call, with
-the last three transcript lines. Hidden from screen sharing. Background
+the last three transcript lines. Hidden from screen sharing. Drag its edges
+or corners to resize it, drag the status line at the top to move it;
+`Ctrl+Alt+O` shows or hides it. Background
 color, text color and background opacity are set in Settings → Display;
 the text itself stays fully opaque.
 
@@ -191,6 +193,7 @@ and Shade warns when GPU memory is above 90%. Small quantized models
 | Answer the last question | `Ctrl+Alt+A` |
 | Screenshot a region | `Ctrl+Alt+S` |
 | Switch window / overlay | `Ctrl+Alt+V` |
+| Show / hide overlay | `Ctrl+Alt+O` |
 | Toggle overlay click-through | `Ctrl+Alt+C` |
 | Dismiss the current hint | `Ctrl+Alt+D` |
 | Toggle auto hints | `Ctrl+Alt+Q` |
