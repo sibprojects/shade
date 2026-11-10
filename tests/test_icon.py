@@ -44,3 +44,13 @@ def test_gem_has_the_s_letter(qtbot):
         if QColor.fromRgba(img.pixel(x, y)).lightness() > 200
     )
     assert bright > 50
+
+
+def test_s_letter_is_large(qtbot):
+    img = _img(256)
+    w, h = img.width(), img.height()
+    rows = [
+        y for y in range(h)
+        if any(QColor.fromRgba(img.pixel(x, y)).lightness() > 225 for x in range(int(w * 0.3), int(w * 0.7)))
+    ]
+    assert (max(rows) - min(rows)) / h >= 0.6  # letter height: twice the old ~0.33
