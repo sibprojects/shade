@@ -9,7 +9,7 @@ from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap, QPolygonF
 
 APOTHEM_OUTER = 0.48  # half-width of the gem (flat sides touch the icon edge)
-APOTHEM_TABLE = 0.27  # half-width of the flat top facet
+APOTHEM_TABLE = 0.36  # half-width of the flat top facet (fits the big S)
 LIGHT_FROM = math.radians(225)  # light comes from the top-left
 
 
@@ -64,7 +64,7 @@ def _draw(size: int) -> QPixmap:
             p.drawPolygon(_poly(points, size))
     # The letter as a vector path: no ClearType color fringes, stays gray.
     f = QFont()
-    f.setPixelSize(round(size * 0.46))
+    f.setPixelSize(round(size * 0.92))
     f.setBold(True)
     path = QPainterPath()
     path.addText(0, 0, f, "S")
