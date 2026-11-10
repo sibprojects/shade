@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSlider,
     QSpinBox,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -121,25 +122,45 @@ class SettingsDialog(QDialog):
         # --- hotkeys ---
         self.hotkey_edits = {a: QLineEdit(settings.hotkeys.get(a, "")) for a in ACTIONS}
 
+        # --- tabs ---
+        model_tab = QWidget()
+        mt = QVBoxLayout(model_tab)
         form = QFormLayout()
         form.addRow("Provider", prov_row)
         form.addRow("", self.key_status)
-        layout = QVBoxLayout(self)
-        layout.addLayout(form)
-        layout.addWidget(self.claude_box)
-        layout.addWidget(self.preset_box)
-        other = QFormLayout()
-        other.addRow("Display", self.display_mode)
-        other.addRow("Overlay opacity", self.opacity)
-        other.addRow("", self.click_through)
-        other.addRow("", self.auto)
-        other.addRow("Microphone", self.mic)
-        other.addRow("System audio", self.loopback)
-        other.addRow("End of phrase pause", self.vad_silence)
-        other.addRow("Context sent to model", self.context)
+        mt.addLayout(form)
+        mt.addWidget(self.claude_box)
+        mt.addWidget(self.preset_box)
+        mt.addStretch(1)
+
+        display_tab = QWidget()
+        dt = QFormLayout(display_tab)
+        dt.addRow("Display", self.display_mode)
+        dt.addRow("Overlay opacity", self.opacity)
+        dt.addRow("", self.click_through)
+        dt.addRow("", self.auto)
+
+        audio_tab = QWidget()
+        at = QFormLayout(audio_tab)
+        at.addRow("Microphone", self.mic)
+        at.addRow("System audio", self.loopback)
+        at.addRow("End of phrase pause", self.vad_silence)
+        at.addRow("Context sent to model", self.context)
+
+        hotkeys_tab = QWidget()
+        ht = QFormLayout(hotkeys_tab)
         for a in ACTIONS:
-            other.addRow(HOTKEY_LABELS[a], self.hotkey_edits[a])
-        layout.addLayout(other)
+            ht.addRow(HOTKEY_LABELS[a], self.hotkey_edits[a])
+        ht.addRow("", QLabel("Format: <ctrl>+<alt>+a, <f8>, <shift>+<f2>"))
+
+        self.tabs = QTabWidget()
+        self.tabs.addTab(model_tab, "Model")
+        self.tabs.addTab(display_tab, "Display")
+        self.tabs.addTab(audio_tab, "Audio")
+        self.tabs.addTab(hotkeys_tab, "Hotkeys")
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.tabs)
+        self.setMinimumWidth(480)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)

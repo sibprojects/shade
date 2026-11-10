@@ -20,16 +20,34 @@ other side's screen.
 
 ## Screenshots
 
-Shade lives in the system tray (the purple **S**). Right-click it for the menu;
-**Settings…** picks the provider, models, display mode, audio devices and
-hotkeys.
+**Hint window** — the current hint on top (say the first lines out loud),
+earlier hints in the middle, the live transcript at the bottom. The status
+line shows the trigger, the model and the session cost.
+
+<img src="docs/images/hint-window.png" alt="Hint window during an interview" width="560">
+
+**Overlay** — the same hint on a semi-transparent layer over the call, with
+the last three transcript lines. Hidden from screen sharing.
+
+<img src="docs/images/overlay.png" alt="Overlay over a video call" width="560">
+
+**Tray menu and settings** — Shade lives in the system tray (the purple
+**S**). Right-click it for the menu; **Settings…** has four tabs.
 
 <p>
-  <img src="docs/images/tray-menu.png" alt="Tray menu" height="300">
+  <img src="docs/images/tray-menu.png" alt="Tray menu" height="290">
   &nbsp;
-  <img src="docs/images/settings-claude.png" alt="Settings with Claude selected" height="560">
+  <img src="docs/images/settings-model.png" alt="Settings: Model tab with Claude" width="420">
+</p>
+<p>
+  <img src="docs/images/settings-model-grok.png" alt="Settings: Model tab with the Grok preset" width="420">
   &nbsp;
-  <img src="docs/images/settings-grok.png" alt="Settings with the Grok preset selected" height="560">
+  <img src="docs/images/settings-display.png" alt="Settings: Display tab" width="420">
+</p>
+<p>
+  <img src="docs/images/settings-audio.png" alt="Settings: Audio tab" width="420">
+  &nbsp;
+  <img src="docs/images/settings-hotkeys.png" alt="Settings: Hotkeys tab" width="420">
 </p>
 
 <img src="docs/images/about.png" alt="About Shade" width="480">

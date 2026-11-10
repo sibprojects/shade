@@ -4,6 +4,17 @@ from shade.ui.settings_dialog import SettingsDialog
 DEVICES = {"mic": ["Mic A", "Mic B"], "loopback": ["Speakers [Loopback]"]}
 
 
+def test_settings_split_into_tabs(qtbot):
+    d = SettingsDialog(Settings(), DEVICES)
+    qtbot.addWidget(d)
+    names = [d.tabs.tabText(i) for i in range(d.tabs.count())]
+    assert names == ["Model", "Display", "Audio", "Hotkeys"]
+    assert d.tabs.widget(0).isAncestorOf(d.provider)
+    assert d.tabs.widget(1).isAncestorOf(d.opacity)
+    assert d.tabs.widget(2).isAncestorOf(d.mic)
+    assert d.tabs.widget(3).isAncestorOf(d.hotkey_edits["ask"])
+
+
 def test_unchanged_dialog_returns_equal_settings(qtbot):
     s = Settings()
     d = SettingsDialog(s, DEVICES)
