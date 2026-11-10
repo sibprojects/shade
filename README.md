@@ -94,7 +94,7 @@ the text itself stays fully opaque.
   comes from the source.
 - **Speech-to-text:** runs locally on the GPU with faster-whisper
   (`distil-large-v3`, float16). Silero VAD cuts speech into utterances on a
-  ~1 s pause. Nothing is sent to the cloud for transcription.
+  ~600 ms pause. Nothing is sent to the cloud for transcription.
 - **Three triggers:**
   - **Auto:** a small, fast model checks each *Them* utterance for a question
     or a task, including indirect ones like "walk us through…".
@@ -148,7 +148,7 @@ talking):
 
 | Stage | Budget |
 |---|---|
-| End-of-utterance pause (VAD) | ~1.0 s |
+| End-of-utterance pause (VAD) | ~0.6 s |
 | Speech-to-text on the GPU | ≤ 0.5 s |
 | Question detection (fast model) | ~0.3–0.5 s |
 | Model time to first token | ~0.5–1.5 s |
@@ -255,7 +255,7 @@ On an RTX 3070 Ti (8 GB), Windows 11:
 |---|---|
 | Speech-to-text, `distil-large-v3` float16, 7.8 s phrase | 0.25 s |
 | Speech-to-text, `small.en` int8 (local-model mode), same phrase | 0.15 s |
-| End of speech → first hint word, excluding model time (1 s pause) | ~1.4 s |
+| End of speech → first hint word, excluding model time | ~0.8–0.9 s |
 
 Time to first token for each provider will be added after real calls.
 
