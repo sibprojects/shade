@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import QApplication, QFileDialog, QMenu, QSystemTrayIcon
 
 from shade import gpu
@@ -29,6 +29,7 @@ from shade.transcript import Transcript
 from shade.ui.about import show_about
 from shade.ui.bridge import QtBridge
 from shade.ui.hotkeys import HotkeyManager
+from shade.ui.icon import make_icon
 from shade.ui.main_window import MainWindow
 from shade.ui.overlay import Overlay
 from shade.ui.region_select import RegionSelector
@@ -37,24 +38,6 @@ from shade.ui.settings_dialog import SettingsDialog
 CAPTURE_WARNING = "Warning: window may be visible in screen sharing."
 VRAM_WARNING = "GPU memory almost full — hints may lag."
 NEXT_SESSION = "Applies to the next session."
-
-
-def make_icon() -> QIcon:
-    pix = QPixmap(64, 64)
-    pix.fill(Qt.GlobalColor.transparent)
-    p = QPainter(pix)
-    p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    p.setBrush(QColor("#3b3f8f"))
-    p.setPen(Qt.PenStyle.NoPen)
-    p.drawEllipse(2, 2, 60, 60)
-    p.setPen(QColor("white"))
-    f = QFont()
-    f.setPixelSize(38)
-    f.setBold(True)
-    p.setFont(f)
-    p.drawText(pix.rect(), Qt.AlignmentFlag.AlignCenter, "S")
-    p.end()
-    return QIcon(pix)
 
 
 class Session:
@@ -107,6 +90,7 @@ class ShadeApp(QObject):
         self.qapp = QApplication.instance() or QApplication(sys.argv)
         super().__init__()
         self.qapp.setQuitOnLastWindowClosed(False)
+        self.qapp.setWindowIcon(make_icon())
         self.settings_path = settings_path
         self.settings = load_settings(settings_path)
         self.bridge = QtBridge()

@@ -23,8 +23,10 @@ other side's screen.
 **Hint window** — the current hint on top (say the first lines out loud);
 below it, tabs with the live **Transcript** and the **History** of earlier
 hints. The status line shows the trigger, the model and the session cost.
-A normal window with minimize, maximize and close (close hides it to the
-tray); **Day** or **Night** theme in Settings → Display.
+It has the program icon and the usual minimize, maximize and close buttons,
+but no taskbar button: minimize and close send it to the tray, and a click on
+the tray icon (or **Show**) brings it back. **Day** or **Night** theme in
+Settings → Display.
 
 <p>
   <img src="docs/images/hint-window-day.png" alt="Hint window, day theme" width="420">
