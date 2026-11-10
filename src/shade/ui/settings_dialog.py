@@ -6,7 +6,7 @@ import copy
 import os
 from dataclasses import replace
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QLineEdit,
+    QProgressBar,
     QPushButton,
     QSlider,
     QSpinBox,
@@ -54,7 +55,13 @@ def _device_combo(names: list[str], current: str | None) -> QComboBox:
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, settings: Settings, devices: dict[str, list[str]], parent: QWidget | None = None):
+    def __init__(
+        self,
+        settings: Settings,
+        devices: dict[str, list[str]],
+        parent: QWidget | None = None,
+        start_meter: bool = True,
+    ):
         super().__init__(parent)
         self.setWindowTitle("Shade settings")
         self._original = settings
@@ -104,6 +111,14 @@ class SettingsDialog(QDialog):
         self.window_theme.addItem("Day", "day")
         self.window_theme.addItem("Night", "night")
         self.window_theme.setCurrentIndex(max(0, self.window_theme.findData(settings.window_theme)))
+        self.window_font = QSpinBox()
+        self.window_font.setRange(8, 40)
+        self.window_font.setSuffix(" pt")
+        self.window_font.setValue(settings.window_font_size)
+        self.overlay_font = QSpinBox()
+        self.overlay_font.setRange(8, 40)
+        self.overlay_font.setSuffix(" pt")
+        self.overlay_font.setValue(settings.overlay_font_size)
         self.opacity = QSlider(Qt.Orientation.Horizontal)
         self.opacity.setRange(0, 100)
         self.opacity.setValue(round(settings.overlay_opacity * 100))
@@ -125,6 +140,16 @@ class SettingsDialog(QDialog):
         # --- audio ---
         self.mic = _device_combo(devices.get("mic", []), settings.mic_device)
         self.loopback = _device_combo(devices.get("loopback", []), settings.loopback_device)
+        self.mic_gain = QSlider(Qt.Orientation.Horizontal)
+        self.mic_gain.setRange(10, 200)  # tenths: x1.0 .. x20.0
+        self.mic_gain.setValue(round(settings.mic_gain * 10))
+        self.mic_gain_label = QLabel()
+        self.mic_level = QProgressBar()
+        self.mic_level.setRange(0, 100)
+        self.mic_level.setTextVisible(False)
+        self.mic_level.setFixedHeight(10)
+        self.mic_gain.valueChanged.connect(self._on_gain_changed)
+        self._on_gain_changed()
         self.vad_silence = QSpinBox()
         self.vad_silence.setRange(200, 3000)
         self.vad_silence.setSingleStep(50)
@@ -153,6 +178,8 @@ class SettingsDialog(QDialog):
         dt = QFormLayout(display_tab)
         dt.addRow("Display", self.display_mode)
         dt.addRow("Window theme", self.window_theme)
+        dt.addRow("Window font size", self.window_font)
+        dt.addRow("Overlay font size", self.overlay_font)
         dt.addRow("Overlay background", self.overlay_bg_button)
         dt.addRow("Overlay text", self.overlay_text_button)
         dt.addRow("Overlay background opacity", self.opacity)
@@ -162,6 +189,11 @@ class SettingsDialog(QDialog):
         audio_tab = QWidget()
         at = QFormLayout(audio_tab)
         at.addRow("Microphone", self.mic)
+        gain_row = QHBoxLayout()
+        gain_row.addWidget(self.mic_gain, 1)
+        gain_row.addWidget(self.mic_gain_label)
+        at.addRow("Microphone gain", gain_row)
+        at.addRow("Microphone level", self.mic_level)
         at.addRow("System audio", self.loopback)
         at.addRow("End of phrase pause", self.vad_silence)
         at.addRow("Context sent to model", self.context)
@@ -185,9 +217,53 @@ class SettingsDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+        self._meter_source = None
+        self._meter_timer = QTimer(self)
+        self._meter_timer.setInterval(60)
+        self._meter_timer.timeout.connect(self._update_meter)
+        if start_meter:
+            self.mic.currentIndexChanged.connect(self._restart_meter)
+            self._restart_meter()
+
         self.provider.currentIndexChanged.connect(self._on_provider_changed)
         self.provider.setCurrentIndex(max(0, self.provider.findData(settings.provider)))
         self._on_provider_changed()
+
+    # ---- microphone gain and level meter ----------------------------------
+
+    def _gain(self) -> float:
+        return self.mic_gain.value() / 10
+
+    def _on_gain_changed(self, *_):
+        self.mic_gain_label.setText(f"x{self._gain():.1f}")
+        if getattr(self, "_meter_source", None):
+            self._meter_source.gain = self._gain()
+
+    def _restart_meter(self, *_):
+        self._stop_meter()
+        from shade.audio.capture import MicSource
+
+        src = MicSource(self.mic.currentData(), gain=self._gain())
+        src.start(lambda audio, t: None)
+        self._meter_source = src
+        self._meter_timer.start()
+
+    def _update_meter(self) -> None:
+        from shade.audio.capture import level_percent
+
+        src = self._meter_source
+        if src is not None:
+            self.mic_level.setValue(level_percent(src.last_peak))
+
+    def _stop_meter(self) -> None:
+        self._meter_timer.stop()
+        if self._meter_source is not None:
+            self._meter_source.stop()
+            self._meter_source = None
+
+    def done(self, result: int) -> None:  # OK, Cancel or closing the dialog
+        self._stop_meter()
+        super().done(result)
 
     # ---- colors -----------------------------------------------------------
 
@@ -280,12 +356,15 @@ class SettingsDialog(QDialog):
             presets=copy.deepcopy(self._presets),
             display_mode=self.display_mode.currentData(),
             window_theme=self.window_theme.currentData(),
+            window_font_size=self.window_font.value(),
+            overlay_font_size=self.overlay_font.value(),
             overlay_opacity=self.opacity.value() / 100,
             overlay_bg_color=self._overlay_bg,
             overlay_text_color=self._overlay_text,
             click_through=self.click_through.isChecked(),
             auto_enabled=self.auto.isChecked(),
             mic_device=self.mic.currentData(),
+            mic_gain=self._gain(),
             loopback_device=self.loopback.currentData(),
             vad_silence_ms=self.vad_silence.value(),
             context_seconds=self.context.value(),

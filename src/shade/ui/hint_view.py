@@ -59,9 +59,6 @@ class HintView(QWidget):
 
         self._current = QTextBrowser()
         self._current.setOpenExternalLinks(False)
-        f = QFont()
-        f.setPointSize(font_size)
-        self._current.setFont(f)
 
         self._history_view = QTextBrowser()
 
@@ -69,6 +66,10 @@ class HintView(QWidget):
         self._transcript.setReadOnly(True)
         if transcript_lines:
             self._transcript.setMaximumBlockCount(transcript_lines)
+
+        self._compact = compact
+        self._transcript_lines = transcript_lines or 3
+        self.set_font_size(font_size)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -81,9 +82,7 @@ class HintView(QWidget):
             # few transcript lines below it; no history.
             self._transcript.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self._transcript.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            lines = transcript_lines or 3
-            height = lines * self._transcript.fontMetrics().lineSpacing() + 14
-            self._transcript.setFixedHeight(height)
+            self._fit_transcript_strip()
             layout.addWidget(self._current, 1)
             layout.addWidget(self._transcript)
         else:
@@ -98,6 +97,24 @@ class HintView(QWidget):
             split.setStretchFactor(0, 3)
             split.setStretchFactor(1, 2)
             layout.addWidget(split, 1)
+
+    # ---- fonts ---------------------------------------------------------
+
+    def set_font_size(self, pt: int) -> None:
+        """Hint text at `pt`; transcript and history 4 pt smaller."""
+        f = QFont(self._current.font())
+        f.setPointSize(pt)
+        self._current.setFont(f)
+        small = QFont(self._transcript.font())
+        small.setPointSize(max(8, pt - 4))
+        self._transcript.setFont(small)
+        self._history_view.setFont(small)
+        if getattr(self, "_compact", False):
+            self._fit_transcript_strip()
+
+    def _fit_transcript_strip(self) -> None:
+        height = self._transcript_lines * self._transcript.fontMetrics().lineSpacing() + 14
+        self._transcript.setFixedHeight(height)
 
     # ---- event handling ----------------------------------------------
 

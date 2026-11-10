@@ -1,4 +1,4 @@
-# <img src="docs/images/tray-icon.png" width="32" alt=""> Shade
+# <img src="docs/images/tray-icon.png" width="48" alt=""> Shade
 
 ![Python](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
@@ -55,8 +55,8 @@ the text itself stays fully opaque.
   </tr>
 </table>
 
-**Tray menu and settings** — Shade lives in the system tray (the purple
-**S**). Right-click it for the menu; **Settings…** has four tabs.
+**Tray menu and settings** — Shade lives in the system tray (the blue
+diamond). Right-click it for the menu; **Settings…** has four tabs.
 
 <table>
   <tr>
@@ -73,14 +73,14 @@ the text itself stays fully opaque.
   </tr>
   <tr>
     <td align="center"><b>Model — Grok (OpenAI-compatible)</b></td>
-    <td align="center"><b>Display — theme, overlay colors and opacity</b></td>
+    <td align="center"><b>Display — theme, font sizes, overlay colors and opacity</b></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/images/settings-audio.png" alt="Settings: Audio tab" width="400"></td>
     <td align="center"><img src="docs/images/settings-hotkeys.png" alt="Settings: Hotkeys tab" width="400"></td>
   </tr>
   <tr>
-    <td align="center"><b>Audio — devices, pause, context</b></td>
+    <td align="center"><b>Audio — devices, mic gain and level, pause, context</b></td>
     <td align="center"><b>Hotkeys</b></td>
   </tr>
 </table>

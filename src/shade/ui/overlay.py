@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QSettings, Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from shade.ui.capture_guard import CaptureExcluded
+from shade.ui.ui_state import ui_state
 from shade.ui.hint_view import HintView
 from shade.ui.theme import overlay_stylesheet
 
@@ -23,17 +24,18 @@ class Overlay(CaptureExcluded, QWidget):
         click_through: bool = False,
         bg_color: str = "#101218",
         text_color: str = "#f2f2f2",
+        font_size: int = 12,
     ) -> None:
         super().__init__(None, BASE_FLAGS)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setObjectName("overlay")
         self.apply_style(bg_color, text_color, opacity)
-        self.view = HintView(transcript_lines=3, show_history=False, font_size=12, compact=True)
+        self.view = HintView(transcript_lines=3, show_history=False, font_size=font_size, compact=True)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.view)
         self.resize(560, 470)
-        pos = QSettings("Shade", "Shade").value("overlay/pos")
+        pos = ui_state().value("overlay/pos")
         if pos is not None:
             self.move(pos)
         self._drag_from: QPoint | None = None
@@ -62,4 +64,4 @@ class Overlay(CaptureExcluded, QWidget):
 
     def mouseReleaseEvent(self, e):  # noqa: N802
         self._drag_from = None
-        QSettings("Shade", "Shade").setValue("overlay/pos", self.pos())
+        ui_state().setValue("overlay/pos", self.pos())

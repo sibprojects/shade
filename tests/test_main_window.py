@@ -1,4 +1,5 @@
 import ctypes
+import ctypes.wintypes
 
 from PySide6.QtCore import Qt
 
@@ -44,3 +45,24 @@ def test_minimize_hides_to_tray(qtbot):
     qtbot.waitUntil(lambda: not w.isVisible(), timeout=2000)
     w.show()
     assert not w.isMinimized()
+
+
+def test_restore_after_minimize_brings_window_to_front(qtbot):
+    user32 = ctypes.windll.user32
+    w = MainWindow()
+    qtbot.addWidget(w)
+    w.bring_to_front()
+    qtbot.waitUntil(lambda: w.isVisible(), timeout=2000)
+    hwnd = int(w.winId())
+    user32.PostMessageW(hwnd, 0x0112, 0xF020, 0)  # WM_SYSCOMMAND / SC_MINIMIZE, like the title-bar button
+    qtbot.waitUntil(lambda: not w.isVisible(), timeout=2000)
+    w.bring_to_front()
+    qtbot.waitUntil(lambda: w.isVisible(), timeout=2000)
+    assert not user32.IsIconic(hwnd)
+    # Visible on top: the window under its own centre is this window.
+    rect = ctypes.wintypes.RECT()
+    user32.GetWindowRect(hwnd, ctypes.byref(rect))
+    center = ctypes.wintypes.POINT((rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2)
+    user32.WindowFromPoint.argtypes = [ctypes.wintypes.POINT]
+    top = user32.GetAncestor(user32.WindowFromPoint(center), 2)  # GA_ROOT
+    assert top == hwnd

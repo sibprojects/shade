@@ -74,3 +74,30 @@ def test_main_window_theme_switch(qtbot):
     assert "#1e1f24" in w.styleSheet()
     w.apply_theme("day")
     assert "#1e1f24" not in w.styleSheet()
+
+
+def test_font_size_defaults():
+    s = Settings()
+    assert s.window_font_size == 14
+    assert s.overlay_font_size == 12
+
+
+def test_hint_view_font_size_applies_to_hint_and_transcript(qtbot):
+    from shade.ui.hint_view import HintView
+
+    v = HintView()
+    qtbot.addWidget(v)
+    v.set_font_size(20)
+    assert v._current.font().pointSize() == 20
+    assert v._transcript.font().pointSize() == 16
+
+
+def test_dialog_edits_font_sizes(qtbot):
+    d = SettingsDialog(Settings(), DEVICES)
+    qtbot.addWidget(d)
+    assert d.tabs.widget(1).isAncestorOf(d.window_font)
+    assert d.tabs.widget(1).isAncestorOf(d.overlay_font)
+    d.window_font.setValue(18)
+    d.overlay_font.setValue(10)
+    s = d.result_settings()
+    assert (s.window_font_size, s.overlay_font_size) == (18, 10)

@@ -67,6 +67,8 @@ class Settings:
     presets: dict[str, dict] = field(default_factory=lambda: copy.deepcopy(DEFAULT_PRESETS))
     display_mode: str = "window"
     window_theme: str = "day"  # "day" | "night"
+    window_font_size: int = 14
+    overlay_font_size: int = 12
     overlay_opacity: float = 0.85  # background alpha; text stays opaque
     overlay_bg_color: str = "#101218"
     overlay_text_color: str = "#f2f2f2"
@@ -74,6 +76,7 @@ class Settings:
     auto_enabled: bool = True
     mic_device: str | None = None
     loopback_device: str | None = None
+    mic_gain: float = 1.0  # x1..x20, applied before speech detection
     stt_model: str = "distil-large-v3"
     stt_compute: str = "float16"
     stt_model_light: str = "small.en"
