@@ -78,6 +78,7 @@ class HintView(QWidget):
 
         self.tabs: QTabWidget | None = None
         if compact:
+            layout.setSpacing(2)  # overlay: blocks close together
             # Overlay: the hint takes all the space; a fixed strip of the last
             # few transcript lines below it; no history.
             self._transcript.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)

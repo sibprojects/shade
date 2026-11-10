@@ -61,3 +61,15 @@ def test_frame_is_never_fully_transparent(qtbot):
     from PySide6.QtGui import QColor
     for x, y in ((0, 0), (img.width() - 1, img.height() - 1), (img.width() - 1, 0)):
         assert QColor.fromRgba(img.pixel(x, y)).alpha() > 0
+
+
+def test_overlay_blocks_are_2px_apart(qtbot):
+    o = Overlay()
+    qtbot.addWidget(o)
+    o.view._error.show()  # status, error, hint and transcript all present
+    o.show()
+    qtbot.waitExposed(o)
+    widgets = [o.view._status, o.view._error, o.view._current, o.view._transcript]
+    for upper, lower in zip(widgets, widgets[1:]):
+        gap = lower.geometry().top() - upper.geometry().bottom() - 1
+        assert gap == 2, (upper, lower, gap)
