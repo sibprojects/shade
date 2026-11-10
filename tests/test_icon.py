@@ -7,27 +7,40 @@ def _img(size=64):
     return make_icon().pixmap(size, size).toImage()  # may be larger on high-DPI screens
 
 
-def _opaque(img, fx, fy):
-    """Is the pixel at fractional position (fx, fy) of the image opaque?"""
+def _px(img, fx, fy):
     x = min(img.width() - 1, int(fx * img.width()))
     y = min(img.height() - 1, int(fy * img.height()))
-    return QColor.fromRgba(img.pixel(x, y)).alpha() > 200
+    return QColor.fromRgba(img.pixel(x, y))
 
 
-def test_diamond_fills_the_icon_width(qtbot):
+def test_gem_seen_from_above_fills_the_square(qtbot):
     img = _img()
-    # The girdle (widest row) spans almost edge to edge — bigger than the old circle.
-    assert _opaque(img, 0.04, 0.35) and _opaque(img, 0.95, 0.35)
+    for fx, fy in ((0.5, 0.04), (0.5, 0.96), (0.04, 0.5), (0.96, 0.5)):
+        assert _px(img, fx, fy).alpha() > 200
 
 
-def test_diamond_pavilion_ends_in_a_point(qtbot):
+def test_gem_is_a_polygon_not_a_square(qtbot):
     img = _img()
-    assert _opaque(img, 0.5, 0.93)       # tip at the bottom centre
-    assert not _opaque(img, 0.1, 0.9)    # bottom-left is empty
-    assert not _opaque(img, 0.9, 0.9)    # bottom-right is empty
+    for fx, fy in ((0.03, 0.03), (0.97, 0.03), (0.03, 0.97), (0.97, 0.97)):
+        assert _px(img, fx, fy).alpha() < 50
 
 
-def test_diamond_is_blue(qtbot):
+def test_gem_is_black_and_gray(qtbot):
     img = _img()
-    c = QColor.fromRgba(img.pixel(img.width() // 2, int(img.height() * 0.62)))
-    assert c.blue() > c.red() and c.blue() > c.green()
+    for fx in (0.15, 0.3, 0.7, 0.85):
+        for fy in (0.15, 0.5, 0.85):
+            c = _px(img, fx, fy)
+            if c.alpha() > 200:
+                assert max(c.red(), c.green(), c.blue()) - min(c.red(), c.green(), c.blue()) < 12
+
+
+def test_gem_has_the_s_letter(qtbot):
+    img = _img(128)
+    w, h = img.width(), img.height()
+    bright = sum(
+        1
+        for x in range(int(w * 0.35), int(w * 0.65))
+        for y in range(int(h * 0.3), int(h * 0.7))
+        if QColor.fromRgba(img.pixel(x, y)).lightness() > 200
+    )
+    assert bright > 50
