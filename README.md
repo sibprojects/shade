@@ -57,8 +57,8 @@ the text itself stays fully opaque.
   </tr>
 </table>
 
-**Tray menu and settings** — Shade lives in the system tray (the blue
-diamond). Right-click it for the menu; **Settings…** has four tabs.
+**Tray menu and settings** — Shade lives in the system tray (the black-and-gray
+gem with an **S**). Right-click it for the menu; **Settings…** has four tabs.
 
 <table>
   <tr>
