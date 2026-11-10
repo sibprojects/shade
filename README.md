@@ -68,7 +68,7 @@ the text itself stays fully opaque.
 
 ## At a glance
 
-- **Use cases:** job interviews, presentations, work calls with tricky
+- **Use cases:** interviews, presentations, work calls with tricky
   questions. Anything in English where a fast, well-informed answer matters.
 - **Two audio sources:** your microphone is labeled *Me*, system audio
   (Zoom, Teams, Meet, any app) is *Them*. No speaker diarization: the label
