@@ -17,6 +17,14 @@ from shade.audio.resample import TARGET_RATE, Resampler
 
 OnAudio = Callable[[np.ndarray, float], None]
 
+def level_percent(peak: float) -> int:
+    """Peak amplitude -> 0..100 on a -60..0 dBFS scale (for a level meter)."""
+    if peak <= 0:
+        return 0
+    db = 20 * np.log10(min(peak, 1.0))
+    return int(round(max(0.0, min(100.0, (db + 60) / 60 * 100))))
+
+
 GAP_FILL_AFTER_S = 0.2  # no packets for this long = the system is silent
 GAP_CHECK_S = 0.1
 
@@ -52,8 +60,11 @@ class _Source:
         device: str | None = None,
         on_error: Callable[[str], None] | None = None,
         clock: Callable[[], float] | None = None,
+        gain: float = 1.0,
     ) -> None:
         self.device = device
+        self.gain = gain
+        self.last_peak = 0.0  # after gain; read by the level meter
         self.on_error = on_error or (lambda msg: None)
         start = time.monotonic()
         self.clock = clock or (lambda: time.monotonic() - start)
@@ -75,6 +86,10 @@ class _Source:
                 t0 = self.clock() - duration
                 self._audio_end = t0 + duration
                 out = self._resampler.process(block)
+                if self.gain != 1.0:
+                    out = np.clip(out * self.gain, -1.0, 1.0).astype(np.float32, copy=False)
+                if len(out):
+                    self.last_peak = float(np.abs(out).max())
                 if len(out) and self._on_audio:
                     self._on_audio(out, t0)
         except Exception as e:  # never let an exception escape the audio callback

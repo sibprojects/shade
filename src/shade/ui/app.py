@@ -70,7 +70,8 @@ class Session:
             ("them", LoopbackSource, settings.loopback_device),
         ):
             seg = Segmenter(name, SileroVad(), self.stt.submit, silence_ms=settings.vad_silence_ms)
-            src = cls(device, on_error=status, clock=clock)
+            gain = settings.mic_gain if name == "me" else 1.0
+            src = cls(device, on_error=status, clock=clock, gain=gain)
             src.start(seg.feed)
             self.sources.append(src)
 
@@ -103,12 +104,13 @@ class ShadeApp(QObject):
         self.vram_timer.setInterval(10_000)
         self.vram_timer.timeout.connect(self._check_vram)
 
-        self.window = MainWindow(self.settings.window_theme)
+        self.window = MainWindow(self.settings.window_theme, self.settings.window_font_size)
         self.overlay = Overlay(
             self.settings.overlay_opacity,
             self.settings.click_through,
             self.settings.overlay_bg_color,
             self.settings.overlay_text_color,
+            self.settings.overlay_font_size,
         )
         for view in (self.window.view, self.overlay.view):
             self.bridge.event.connect(view.handle)
@@ -218,11 +220,14 @@ class ShadeApp(QObject):
         menu.addAction("Quit", self.quit)
         self.menu = menu
         self.tray.setContextMenu(menu)
-        self.tray.activated.connect(
-            lambda reason: self.show_current_view()
-            if reason == QSystemTrayIcon.ActivationReason.Trigger
-            else None
-        )
+        self.tray.activated.connect(self._on_tray_activated)
+
+    def _on_tray_activated(self, reason) -> None:
+        if reason in (
+            QSystemTrayIcon.ActivationReason.Trigger,
+            QSystemTrayIcon.ActivationReason.DoubleClick,
+        ):
+            self.show_current_view()
 
     def _fill_profiles(self) -> None:
         self.start_menu.clear()
@@ -288,8 +293,11 @@ class ShadeApp(QObject):
         other = self.window if self.settings.display_mode == "overlay" else self.overlay
         other.hide()
         w = self.current_view_widget()
-        w.show()
-        w.raise_()
+        if w is self.window:
+            self.window.bring_to_front()
+        else:
+            w.show()
+            w.raise_()
         if not w.capture_ok:
             self.bridge.emit_event(Status(CAPTURE_WARNING))
 
@@ -317,6 +325,8 @@ class ShadeApp(QObject):
         save_settings(new, self.settings_path)
         # Display and behavior apply now.
         self.window.apply_theme(new.window_theme)
+        self.window.view.set_font_size(new.window_font_size)
+        self.overlay.view.set_font_size(new.overlay_font_size)
         self.overlay.apply_style(new.overlay_bg_color, new.overlay_text_color, new.overlay_opacity)
         if new.click_through != self.overlay.click_through:
             self.overlay.set_click_through(new.click_through)
@@ -328,7 +338,7 @@ class ShadeApp(QObject):
         # Provider, models and audio apply to the next session.
         session_keys = (
             "provider", "claude_model", "claude_effort", "claude_detector_model", "presets",
-            "mic_device", "loopback_device", "vad_silence_ms", "context_seconds", "prices",
+            "mic_device", "mic_gain", "loopback_device", "vad_silence_ms", "context_seconds", "prices",
         )
         if self.session and any(getattr(old, k) != getattr(new, k) for k in session_keys):
             self.bridge.emit_event(Status(NEXT_SESSION))
