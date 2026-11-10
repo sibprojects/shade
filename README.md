@@ -28,22 +28,32 @@ but no taskbar button: minimize and close send it to the tray, and a click on
 the tray icon (or **Show**) brings it back. **Day** or **Night** theme in
 Settings → Display.
 
-<p>
-  <img src="docs/images/hint-window-day.png" alt="Hint window, day theme" width="420">
-  &nbsp;
-  <img src="docs/images/hint-window-night.png" alt="Hint window, night theme" width="420">
-</p>
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/hint-window-day.png" alt="Hint window, day theme" width="400"></td>
+    <td align="center"><img src="docs/images/hint-window-night.png" alt="Hint window, night theme" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Window — Day theme</b></td>
+    <td align="center"><b>Window — Night theme</b></td>
+  </tr>
+</table>
 
 **Overlay** — the same hint on a semi-transparent layer over the call, with
 the last three transcript lines. Hidden from screen sharing. Background
 color, text color and background opacity are set in Settings → Display;
 the text itself stays fully opaque.
 
-<p>
-  <img src="docs/images/overlay-dark.png" alt="Overlay, dark background" width="420">
-  &nbsp;
-  <img src="docs/images/overlay-light.png" alt="Overlay, light background with dark text" width="420">
-</p>
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/overlay-dark.png" alt="Overlay, dark background" width="400"></td>
+    <td align="center"><img src="docs/images/overlay-light.png" alt="Overlay, light background with dark text" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Overlay — dark background, light text</b></td>
+    <td align="center"><b>Overlay — light background, dark text</b></td>
+  </tr>
+</table>
 
 **Tray menu and settings** — Shade lives in the system tray (the purple
 **S**). Right-click it for the menu; **Settings…** has four tabs.
