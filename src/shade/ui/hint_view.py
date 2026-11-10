@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPlainTextEdit,
     QSplitter,
+    QTabWidget,
     QTextBrowser,
     QVBoxLayout,
     QWidget,
@@ -33,6 +34,7 @@ class HintView(QWidget):
         transcript_lines: int | None = None,
         show_history: bool = True,
         font_size: int = 14,
+        compact: bool = False,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -62,27 +64,40 @@ class HintView(QWidget):
         self._current.setFont(f)
 
         self._history_view = QTextBrowser()
-        self._history_view.setVisible(show_history)
 
         self._transcript = QPlainTextEdit()
         self._transcript.setReadOnly(True)
         if transcript_lines:
             self._transcript.setMaximumBlockCount(transcript_lines)
 
-        lower = QSplitter(Qt.Orientation.Vertical)
-        lower.addWidget(self._history_view)
-        lower.addWidget(self._transcript)
-        main = QSplitter(Qt.Orientation.Vertical)
-        main.addWidget(self._current)
-        main.addWidget(lower)
-        main.setStretchFactor(0, 3)
-        main.setStretchFactor(1, 2)
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.addWidget(self._status)
         layout.addWidget(self._error)
-        layout.addWidget(main, 1)
+
+        self.tabs: QTabWidget | None = None
+        if compact:
+            # Overlay: the hint takes all the space; a fixed strip of the last
+            # few transcript lines below it; no history.
+            self._transcript.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            self._transcript.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            lines = transcript_lines or 3
+            height = lines * self._transcript.fontMetrics().lineSpacing() + 14
+            self._transcript.setFixedHeight(height)
+            layout.addWidget(self._current, 1)
+            layout.addWidget(self._transcript)
+        else:
+            # Window: current hint on top; transcript and history as tabs below.
+            self.tabs = QTabWidget()
+            self.tabs.addTab(self._transcript, "Transcript")
+            if show_history:
+                self.tabs.addTab(self._history_view, "History")
+            split = QSplitter(Qt.Orientation.Vertical)
+            split.addWidget(self._current)
+            split.addWidget(self.tabs)
+            split.setStretchFactor(0, 3)
+            split.setStretchFactor(1, 2)
+            layout.addWidget(split, 1)
 
     # ---- event handling ----------------------------------------------
 

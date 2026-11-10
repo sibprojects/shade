@@ -20,9 +20,9 @@ other side's screen.
 
 ## Screenshots
 
-**Hint window** — the current hint on top (say the first lines out loud),
-earlier hints in the middle, the live transcript at the bottom. The status
-line shows the trigger, the model and the session cost.
+**Hint window** — the current hint on top (say the first lines out loud);
+below it, tabs with the live **Transcript** and the **History** of earlier
+hints. The status line shows the trigger, the model and the session cost.
 
 <img src="docs/images/hint-window.png" alt="Hint window during an interview" width="560">
 
