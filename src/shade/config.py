@@ -66,7 +66,10 @@ class Settings:
     claude_detector_model: str = "claude-haiku-5-5"
     presets: dict[str, dict] = field(default_factory=lambda: copy.deepcopy(DEFAULT_PRESETS))
     display_mode: str = "window"
-    overlay_opacity: float = 0.85
+    window_theme: str = "day"  # "day" | "night"
+    overlay_opacity: float = 0.85  # background alpha; text stays opaque
+    overlay_bg_color: str = "#101218"
+    overlay_text_color: str = "#f2f2f2"
     click_through: bool = False
     auto_enabled: bool = True
     mic_device: str | None = None
