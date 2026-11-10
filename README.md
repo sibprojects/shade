@@ -1,4 +1,4 @@
-# <img src="docs/images/tray-icon.png" width="48" alt=""> Shade
+# <img src="docs/images/shade-icon.png" width="48" alt=""> Shade
 
 ![Python](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
