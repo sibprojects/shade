@@ -7,8 +7,10 @@ import os
 from dataclasses import replace
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
+    QColorDialog,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -98,9 +100,23 @@ class SettingsDialog(QDialog):
         self.display_mode.addItem("Window", "window")
         self.display_mode.addItem("Overlay", "overlay")
         self.display_mode.setCurrentIndex(self.display_mode.findData(settings.display_mode))
+        self.window_theme = QComboBox()
+        self.window_theme.addItem("Day", "day")
+        self.window_theme.addItem("Night", "night")
+        self.window_theme.setCurrentIndex(max(0, self.window_theme.findData(settings.window_theme)))
         self.opacity = QSlider(Qt.Orientation.Horizontal)
-        self.opacity.setRange(20, 100)
+        self.opacity.setRange(0, 100)
         self.opacity.setValue(round(settings.overlay_opacity * 100))
+        self.overlay_bg_button = QPushButton()
+        self.overlay_text_button = QPushButton()
+        self.overlay_bg_button.clicked.connect(
+            lambda: self._pick_color(self._overlay_bg, self.set_overlay_bg, "Overlay background")
+        )
+        self.overlay_text_button.clicked.connect(
+            lambda: self._pick_color(self._overlay_text, self.set_overlay_text, "Overlay text")
+        )
+        self.set_overlay_bg(settings.overlay_bg_color)
+        self.set_overlay_text(settings.overlay_text_color)
         self.click_through = QCheckBox("Overlay ignores mouse clicks")
         self.click_through.setChecked(settings.click_through)
         self.auto = QCheckBox("Answer detected questions automatically")
@@ -136,7 +152,10 @@ class SettingsDialog(QDialog):
         display_tab = QWidget()
         dt = QFormLayout(display_tab)
         dt.addRow("Display", self.display_mode)
-        dt.addRow("Overlay opacity", self.opacity)
+        dt.addRow("Window theme", self.window_theme)
+        dt.addRow("Overlay background", self.overlay_bg_button)
+        dt.addRow("Overlay text", self.overlay_text_button)
+        dt.addRow("Overlay background opacity", self.opacity)
         dt.addRow("", self.click_through)
         dt.addRow("", self.auto)
 
@@ -169,6 +188,27 @@ class SettingsDialog(QDialog):
         self.provider.currentIndexChanged.connect(self._on_provider_changed)
         self.provider.setCurrentIndex(max(0, self.provider.findData(settings.provider)))
         self._on_provider_changed()
+
+    # ---- colors -----------------------------------------------------------
+
+    @staticmethod
+    def _paint_swatch(button: QPushButton, color: str) -> None:
+        text = "#000000" if QColor(color).lightness() > 140 else "#ffffff"
+        button.setText(color)
+        button.setStyleSheet(f"background: {color}; color: {text}; padding: 4px 10px;")
+
+    def set_overlay_bg(self, color: str) -> None:
+        self._overlay_bg = color
+        self._paint_swatch(self.overlay_bg_button, color)
+
+    def set_overlay_text(self, color: str) -> None:
+        self._overlay_text = color
+        self._paint_swatch(self.overlay_text_button, color)
+
+    def _pick_color(self, current: str, setter, title: str) -> None:
+        chosen = QColorDialog.getColor(QColor(current), self, title)
+        if chosen.isValid():
+            setter(chosen.name())
 
     # ---- presets ----------------------------------------------------------
 
@@ -239,7 +279,10 @@ class SettingsDialog(QDialog):
             claude_effort=self.claude_effort.currentText(),
             presets=copy.deepcopy(self._presets),
             display_mode=self.display_mode.currentData(),
+            window_theme=self.window_theme.currentData(),
             overlay_opacity=self.opacity.value() / 100,
+            overlay_bg_color=self._overlay_bg,
+            overlay_text_color=self._overlay_text,
             click_through=self.click_through.isChecked(),
             auto_enabled=self.auto.isChecked(),
             mic_device=self.mic.currentData(),

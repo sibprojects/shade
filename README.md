@@ -23,13 +23,25 @@ other side's screen.
 **Hint window** — the current hint on top (say the first lines out loud);
 below it, tabs with the live **Transcript** and the **History** of earlier
 hints. The status line shows the trigger, the model and the session cost.
+A normal window with minimize, maximize and close (close hides it to the
+tray); **Day** or **Night** theme in Settings → Display.
 
-<img src="docs/images/hint-window.png" alt="Hint window during an interview" width="560">
+<p>
+  <img src="docs/images/hint-window-day.png" alt="Hint window, day theme" width="420">
+  &nbsp;
+  <img src="docs/images/hint-window-night.png" alt="Hint window, night theme" width="420">
+</p>
 
 **Overlay** — the same hint on a semi-transparent layer over the call, with
-the last three transcript lines. Hidden from screen sharing.
+the last three transcript lines. Hidden from screen sharing. Background
+color, text color and background opacity are set in Settings → Display;
+the text itself stays fully opaque.
 
-<img src="docs/images/overlay.png" alt="Overlay over a video call" width="560">
+<p>
+  <img src="docs/images/overlay-dark.png" alt="Overlay, dark background" width="420">
+  &nbsp;
+  <img src="docs/images/overlay-light.png" alt="Overlay, light background with dark text" width="420">
+</p>
 
 **Tray menu and settings** — Shade lives in the system tray (the purple
 **S**). Right-click it for the menu; **Settings…** has four tabs.

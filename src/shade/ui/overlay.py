@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from shade.ui.capture_guard import CaptureExcluded
 from shade.ui.hint_view import HintView
+from shade.ui.theme import overlay_stylesheet
 
 BASE_FLAGS = (
     Qt.WindowType.FramelessWindowHint
@@ -16,18 +17,17 @@ BASE_FLAGS = (
 
 
 class Overlay(CaptureExcluded, QWidget):
-    def __init__(self, opacity: float = 0.85, click_through: bool = False) -> None:
+    def __init__(
+        self,
+        opacity: float = 0.85,
+        click_through: bool = False,
+        bg_color: str = "#101218",
+        text_color: str = "#f2f2f2",
+    ) -> None:
         super().__init__(None, BASE_FLAGS)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setWindowOpacity(opacity)
         self.setObjectName("overlay")
-        self.setStyleSheet(
-            "#overlay { background: transparent; }"
-            "QTextBrowser, QPlainTextEdit { background: rgba(16, 18, 24, 215); color: #f2f2f2;"
-            " border: 1px solid rgba(255,255,255,40); border-radius: 8px; }"
-            "QLabel { color: #f2f2f2; background: rgba(16,18,24,180); border-radius: 4px;"
-            " padding: 2px 6px; }"
-        )
+        self.apply_style(bg_color, text_color, opacity)
         self.view = HintView(transcript_lines=3, show_history=False, font_size=12, compact=True)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -39,6 +39,10 @@ class Overlay(CaptureExcluded, QWidget):
         self._drag_from: QPoint | None = None
         self.click_through = False
         self.set_click_through(click_through)
+
+    def apply_style(self, bg_color: str, text_color: str, opacity: float) -> None:
+        # Opacity applies to the background only, so text stays crisp.
+        self.setStyleSheet(overlay_stylesheet(bg_color, text_color, opacity))
 
     def set_click_through(self, on: bool) -> None:
         self.click_through = on
