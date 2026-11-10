@@ -58,23 +58,32 @@ the text itself stays fully opaque.
 **Tray menu and settings** — Shade lives in the system tray (the purple
 **S**). Right-click it for the menu; **Settings…** has four tabs.
 
-<p>
-  <img src="docs/images/tray-menu.png" alt="Tray menu" height="290">
-  &nbsp;
-  <img src="docs/images/settings-model.png" alt="Settings: Model tab with Claude" width="420">
-</p>
-<p>
-  <img src="docs/images/settings-model-grok.png" alt="Settings: Model tab with the Grok preset" width="420">
-  &nbsp;
-  <img src="docs/images/settings-display.png" alt="Settings: Display tab" width="420">
-</p>
-<p>
-  <img src="docs/images/settings-audio.png" alt="Settings: Audio tab" width="420">
-  &nbsp;
-  <img src="docs/images/settings-hotkeys.png" alt="Settings: Hotkeys tab" width="420">
-</p>
-
-<img src="docs/images/about.png" alt="About Shade" width="480">
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/tray-menu.png" alt="Tray menu" height="290"></td>
+    <td align="center"><img src="docs/images/settings-model.png" alt="Settings: Model tab with Claude" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Tray menu</b></td>
+    <td align="center"><b>Model — Claude</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/settings-model-grok.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
+    <td align="center"><img src="docs/images/settings-display.png" alt="Settings: Display tab" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Model — Grok (OpenAI-compatible)</b></td>
+    <td align="center"><b>Display — theme, overlay colors and opacity</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/settings-audio.png" alt="Settings: Audio tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-hotkeys.png" alt="Settings: Hotkeys tab" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Audio — devices, pause, context</b></td>
+    <td align="center"><b>Hotkeys</b></td>
+  </tr>
+</table>
 
 ## At a glance
 
