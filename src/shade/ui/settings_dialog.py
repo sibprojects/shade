@@ -37,6 +37,7 @@ HOTKEY_LABELS = {
     "ask": "Answer last question",
     "screenshot": "Screenshot a region",
     "toggle_view": "Switch window / overlay",
+    "toggle_overlay": "Show / hide overlay",
     "click_through": "Overlay click-through",
     "dismiss": "Dismiss hint",
     "toggle_auto": "Toggle auto hints",

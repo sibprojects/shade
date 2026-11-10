@@ -12,7 +12,9 @@ from PySide6.QtCore import QObject, Signal
 from pynput import keyboard
 from pynput.keyboard import Key, KeyCode
 
-ACTIONS = ("ask", "screenshot", "toggle_view", "click_through", "dismiss", "toggle_auto")
+ACTIONS = (
+    "ask", "screenshot", "toggle_view", "toggle_overlay", "click_through", "dismiss", "toggle_auto",
+)
 
 _MODIFIERS = {
     Key.ctrl_l: Key.ctrl, Key.ctrl_r: Key.ctrl,

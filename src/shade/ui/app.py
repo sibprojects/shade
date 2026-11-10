@@ -136,6 +136,8 @@ class ShadeApp(QObject):
     def on_hotkey(self, action: str) -> None:
         if action == "toggle_view":
             self.toggle_view()
+        elif action == "toggle_overlay":
+            self.toggle_overlay()
         elif action == "click_through":
             self.overlay.set_click_through(not self.overlay.click_through)
             self.settings.click_through = self.overlay.click_through
@@ -306,6 +308,16 @@ class ShadeApp(QObject):
         save_settings(self.settings, self.settings_path)
         self.view_actions[mode].setChecked(True)
         self.show_current_view()
+
+    def toggle_overlay(self) -> None:
+        """Show or hide the overlay without touching the window mode setting."""
+        if self.overlay.isVisible():
+            self.overlay.hide()
+        else:
+            self.overlay.show()
+            self.overlay.raise_()
+            if not self.overlay.capture_ok:
+                self.bridge.emit_event(Status(CAPTURE_WARNING))
 
     def toggle_view(self) -> None:
         self.set_display_mode("window" if self.settings.display_mode == "overlay" else "overlay")
