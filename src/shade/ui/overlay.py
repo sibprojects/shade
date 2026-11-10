@@ -1,7 +1,7 @@
 """Semi-transparent always-on-top overlay mode.
 
 Frameless, so it draws its own thin frame: drag an edge or corner to resize,
-drag the status line at the top to move. Position and size are remembered.
+drag the status line at the bottom to move. Position and size are remembered.
 """
 
 from __future__ import annotations

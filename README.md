@@ -22,7 +22,8 @@ other side's screen.
 
 **Hint window** — the current hint on top (say the first lines out loud);
 below it, tabs with the live **Transcript** and the **History** of earlier
-hints. The status line shows the trigger, the model and the session cost.
+hints. The status line at the bottom shows the trigger, the model and the
+session cost.
 It has the program icon and the usual minimize, maximize and close buttons,
 but no taskbar button: minimize and close send it to the tray, and a click on
 the tray icon (or **Show**) brings it back. **Day** or **Night** theme in
@@ -41,7 +42,7 @@ Settings → Display.
 
 **Overlay** — the same hint on a semi-transparent layer over the call, with
 the last three transcript lines. Hidden from screen sharing. Drag its edges
-or corners to resize it, drag the status line at the top to move it;
+or corners to resize it, drag the status line at the bottom to move it;
 `Ctrl+Alt+O` shows or hides it. Background
 color, text color and background opacity are set in Settings → Display;
 the text itself stays fully opaque.

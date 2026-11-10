@@ -68,3 +68,21 @@ def test_compact_mode_has_no_history_and_fixed_transcript(qtbot):
     line = v._transcript.fontMetrics().lineSpacing()
     assert v._transcript.maximumHeight() <= 3 * line + 20
     assert v._transcript.minimumHeight() == v._transcript.maximumHeight()
+
+
+def test_status_line_is_at_the_bottom_in_window_mode(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    v.resize(500, 600)
+    v.show()
+    qtbot.waitExposed(v)
+    assert v._status.geometry().top() > v.tabs.geometry().bottom()
+
+
+def test_status_line_is_at_the_bottom_in_overlay_mode(qtbot):
+    v = HintView(transcript_lines=3, compact=True)
+    qtbot.addWidget(v)
+    v.resize(500, 400)
+    v.show()
+    qtbot.waitExposed(v)
+    assert v._status.geometry().top() > v._transcript.geometry().bottom()

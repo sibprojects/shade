@@ -73,8 +73,7 @@ class HintView(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
-        layout.addWidget(self._status)
-        layout.addWidget(self._error)
+        layout.addWidget(self._error)  # alerts stay on top, next to the hint
 
         self.tabs: QTabWidget | None = None
         if compact:
@@ -86,6 +85,7 @@ class HintView(QWidget):
             self._fit_transcript_strip()
             layout.addWidget(self._current, 1)
             layout.addWidget(self._transcript)
+            layout.addWidget(self._status)  # trigger · model · cost, at the bottom
         else:
             # Window: current hint on top; transcript and history as tabs below.
             self.tabs = QTabWidget()
@@ -98,6 +98,7 @@ class HintView(QWidget):
             split.setStretchFactor(0, 3)
             split.setStretchFactor(1, 2)
             layout.addWidget(split, 1)
+            layout.addWidget(self._status)  # trigger · model · cost, at the bottom
 
     # ---- fonts ---------------------------------------------------------
 
