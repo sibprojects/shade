@@ -1,4 +1,4 @@
-# Shade
+# <img src="docs/images/tray-icon.png" width="32" alt=""> Shade
 
 ![Python](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
@@ -17,6 +17,22 @@ other side's screen.
 
 > **Status:** alpha. Everything below is implemented and covered by tests;
 > real-call behavior with each provider is still being measured.
+
+## Screenshots
+
+Shade lives in the system tray (the purple **S**). Right-click it for the menu;
+**Settings…** picks the provider, models, display mode, audio devices and
+hotkeys.
+
+<p>
+  <img src="docs/images/tray-menu.png" alt="Tray menu" height="300">
+  &nbsp;
+  <img src="docs/images/settings-claude.png" alt="Settings with Claude selected" height="560">
+  &nbsp;
+  <img src="docs/images/settings-grok.png" alt="Settings with the Grok preset selected" height="560">
+</p>
+
+<img src="docs/images/about.png" alt="About Shade" width="480">
 
 ## At a glance
 

@@ -26,6 +26,7 @@ from shade.models import HintError, Status
 from shade.session import SessionWriter
 from shade.stt import SttWorker, Transcriber
 from shade.transcript import Transcript
+from shade.ui.about import show_about
 from shade.ui.bridge import QtBridge
 from shade.ui.hotkeys import HotkeyManager
 from shade.ui.main_window import MainWindow
@@ -223,6 +224,7 @@ class ShadeApp(QObject):
         menu.addAction("Show", self.show_current_view)
         menu.addAction("Settings…", self.open_settings)
         menu.addAction("Open sessions folder", self.open_sessions_folder)
+        menu.addAction("About…", lambda: show_about(make_icon().pixmap(64, 64)))
         menu.addSeparator()
         menu.addAction("Quit", self.quit)
         self.menu = menu
