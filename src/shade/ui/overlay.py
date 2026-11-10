@@ -28,11 +28,11 @@ class Overlay(CaptureExcluded, QWidget):
             "QLabel { color: #f2f2f2; background: rgba(16,18,24,180); border-radius: 4px;"
             " padding: 2px 6px; }"
         )
-        self.view = HintView(transcript_lines=3, show_history=False, font_size=15)
+        self.view = HintView(transcript_lines=3, show_history=False, font_size=12, compact=True)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.view)
-        self.resize(520, 420)
+        self.resize(560, 470)
         pos = QSettings("Shade", "Shade").value("overlay/pos")
         if pos is not None:
             self.move(pos)

@@ -53,3 +53,18 @@ def test_transcript_lines(qtbot):
     for i in range(3):
         v.handle(UtteranceAdded(Utterance("them", f"line {i}", i, i + 1)))
     assert v.transcript_text().splitlines() == ["[00:01] Them: line 1", "[00:02] Them: line 2"]
+
+
+def test_window_mode_has_transcript_and_history_tabs(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    assert [v.tabs.tabText(i) for i in range(v.tabs.count())] == ["Transcript", "History"]
+
+
+def test_compact_mode_has_no_history_and_fixed_transcript(qtbot):
+    v = HintView(transcript_lines=3, compact=True)
+    qtbot.addWidget(v)
+    assert v.tabs is None
+    line = v._transcript.fontMetrics().lineSpacing()
+    assert v._transcript.maximumHeight() <= 3 * line + 20
+    assert v._transcript.minimumHeight() == v._transcript.maximumHeight()
