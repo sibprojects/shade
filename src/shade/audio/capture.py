@@ -7,6 +7,7 @@ on_error and never raised, so the other source keeps running.
 
 from __future__ import annotations
 
+import threading
 import time
 from typing import Callable
 
@@ -15,6 +16,9 @@ import numpy as np
 from shade.audio.resample import TARGET_RATE, Resampler
 
 OnAudio = Callable[[np.ndarray, float], None]
+
+GAP_FILL_AFTER_S = 0.2  # no packets for this long = the system is silent
+GAP_CHECK_S = 0.1
 
 
 def list_devices() -> dict[str, list[str]]:
@@ -56,19 +60,61 @@ class _Source:
         self._on_audio: OnAudio | None = None
         self._resampler: Resampler | None = None
         self._failed = False
+        self._lock = threading.Lock()
+        self._audio_end: float | None = None  # session time where delivered audio ends
+        self._gap_stop = threading.Event()
+        self._gap_thread: threading.Thread | None = None
 
     def _deliver(self, block: np.ndarray, in_rate: int) -> None:
         if self._failed:
             return
         try:
-            # Time of the block's first sample = now minus the block duration.
-            t0 = self.clock() - len(block) / in_rate
-            out = self._resampler.process(block)
-            if len(out) and self._on_audio:
-                self._on_audio(out, t0)
+            with self._lock:
+                # Time of the block's first sample = now minus the block duration.
+                duration = len(block) / in_rate
+                t0 = self.clock() - duration
+                self._audio_end = t0 + duration
+                out = self._resampler.process(block)
+                if len(out) and self._on_audio:
+                    self._on_audio(out, t0)
         except Exception as e:  # never let an exception escape the audio callback
             self._failed = True
             self._fail(e)
+
+    def _fill_gap(self) -> None:
+        """Deliver silence for the time no packets arrived (WASAPI loopback sends
+        nothing while the system is quiet), so the segmenter can close the last
+        utterance instead of waiting for the next sound."""
+        with self._lock:
+            if self._failed or self._audio_end is None or not self._on_audio:
+                return
+            gap = self.clock() - self._audio_end
+            if gap < GAP_FILL_AFTER_S:
+                return
+            n = round(gap * TARGET_RATE)
+            start = self._audio_end
+            self._audio_end = start + n / TARGET_RATE
+            self._on_audio(np.zeros(n, dtype=np.float32), start)
+
+    def _start_gap_filler(self) -> None:
+        def loop():
+            while not self._gap_stop.wait(GAP_CHECK_S):
+                try:
+                    self._fill_gap()
+                except Exception as e:
+                    self._failed = True
+                    self._fail(e)
+                    return
+
+        self._gap_stop.clear()
+        self._gap_thread = threading.Thread(target=loop, daemon=True, name=f"{self.label}-gap")
+        self._gap_thread.start()
+
+    def _stop_gap_filler(self) -> None:
+        self._gap_stop.set()
+        if self._gap_thread:
+            self._gap_thread.join(1.0)
+            self._gap_thread = None
 
     def _fail(self, e: Exception) -> None:
         self.on_error(f"{self.label} unavailable: {e}")
@@ -149,11 +195,13 @@ class LoopbackSource(_Source):
                 stream_callback=callback,
             )
             self._stream.start_stream()
+            self._start_gap_filler()
         except Exception as e:
             self._stream = None
             self._fail(e)
 
     def stop(self) -> None:
+        self._stop_gap_filler()
         if getattr(self, "_stream", None):
             try:
                 self._stream.stop_stream()
