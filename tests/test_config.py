@@ -6,7 +6,7 @@ def test_stt_config_light_for_local():
 
 
 def test_stt_config_default_for_cloud():
-    assert stt_config(Settings()) == ("distil-large-v3", "float16")
+    assert stt_config(Settings()) == ("large-v3-turbo", "float16")
 
 
 def test_missing_file_creates_defaults(tmp_path):

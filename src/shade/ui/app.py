@@ -24,7 +24,7 @@ from shade.engine import Engine
 from shade.llm.factory import make_provider_or_unavailable
 from shade.models import HintError, Status
 from shade.session import SessionWriter
-from shade.stt import SttWorker, Transcriber
+from shade.stt import SttWorker, Transcriber, build_stt_prompt
 from shade.transcript import Transcript
 from shade.ui.about import show_about
 from shade.ui.bridge import QtBridge
@@ -63,7 +63,15 @@ class Session:
             clock=clock,
         )
         self.engine.set_auto(settings.auto_enabled)
-        self.stt = SttWorker(transcriber, self.engine.on_utterance, on_error=status)
+        profile_text = profile.read_text(encoding="utf-8", errors="replace")
+        transcript = self.engine.transcript
+        self.stt = SttWorker(
+            transcriber,
+            self.engine.on_utterance,
+            on_error=status,
+            # The call topic and the last lines help the speech model with terms.
+            prompt_fn=lambda: build_stt_prompt(profile_text, transcript.all()[-2:]),
+        )
         self.sources = []
         for name, cls, device in (
             ("me", MicSource, settings.mic_device),
@@ -138,6 +146,8 @@ class ShadeApp(QObject):
             self.toggle_view()
         elif action == "toggle_overlay":
             self.toggle_overlay()
+        elif action == "toggle_window":
+            self.toggle_window()
         elif action == "click_through":
             self.overlay.set_click_through(not self.overlay.click_through)
             self.settings.click_through = self.overlay.click_through
@@ -309,6 +319,13 @@ class ShadeApp(QObject):
         self.view_actions[mode].setChecked(True)
         self.show_current_view()
 
+    def toggle_window(self) -> None:
+        """Show or hide the hint window without touching the display mode setting."""
+        if self.window.isVisible():
+            self.window.hide()
+        else:
+            self.window.bring_to_front()
+
     def toggle_overlay(self) -> None:
         """Show or hide the overlay without touching the window mode setting."""
         if self.overlay.isVisible():
@@ -329,10 +346,14 @@ class ShadeApp(QObject):
 
     def open_settings(self) -> None:
         dialog = SettingsDialog(self.settings, list_devices())
-        if not dialog.exec():
-            return
-        new = dialog.result_settings()
+        dialog.applied.connect(self.apply_settings)
+        if dialog.exec():
+            self.apply_settings(dialog.result_settings())
+
+    def apply_settings(self, new: Settings) -> None:
         old = self.settings
+        if new == old:
+            return
         self.settings = new
         save_settings(new, self.settings_path)
         # Display and behavior apply now.
@@ -351,6 +372,7 @@ class ShadeApp(QObject):
         session_keys = (
             "provider", "claude_model", "claude_effort", "claude_detector_model", "presets",
             "mic_device", "mic_gain", "loopback_device", "vad_silence_ms", "context_seconds", "prices",
+            "stt_model",
         )
         if self.session and any(getattr(old, k) != getattr(new, k) for k in session_keys):
             self.bridge.emit_event(Status(NEXT_SESSION))

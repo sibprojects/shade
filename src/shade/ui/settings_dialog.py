@@ -6,7 +6,7 @@ import copy
 import os
 from dataclasses import replace
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -38,6 +38,7 @@ HOTKEY_LABELS = {
     "screenshot": "Screenshot a region",
     "toggle_view": "Switch window / overlay",
     "toggle_overlay": "Show / hide overlay",
+    "toggle_window": "Show / hide window",
     "click_through": "Overlay click-through",
     "dismiss": "Dismiss hint",
     "toggle_auto": "Toggle auto hints",
@@ -55,7 +56,15 @@ def _device_combo(names: list[str], current: str | None) -> QComboBox:
     return c
 
 
+STT_MODELS = (
+    ("large-v3-turbo", "large-v3-turbo — accurate and fast (recommended)"),
+    ("large-v3", "large-v3 — most accurate, about 2x slower"),
+    ("distil-large-v3", "distil-large-v3 — fast, ignores call context"),
+)
+
+
 class SettingsDialog(QDialog):
+    applied = Signal(object)  # Settings, emitted by the Apply button
     def __init__(
         self,
         settings: Settings,
@@ -151,6 +160,12 @@ class SettingsDialog(QDialog):
         self.mic_level.setFixedHeight(10)
         self.mic_gain.valueChanged.connect(self._on_gain_changed)
         self._on_gain_changed()
+        self.stt_model = QComboBox()
+        for key, label in STT_MODELS:
+            self.stt_model.addItem(label, key)
+        if self.stt_model.findData(settings.stt_model) < 0:
+            self.stt_model.addItem(settings.stt_model, settings.stt_model)
+        self.stt_model.setCurrentIndex(self.stt_model.findData(settings.stt_model))
         self.vad_silence = QSpinBox()
         self.vad_silence.setRange(200, 3000)
         self.vad_silence.setSingleStep(50)
@@ -196,6 +211,7 @@ class SettingsDialog(QDialog):
         at.addRow("Microphone gain", gain_row)
         at.addRow("Microphone level", self.mic_level)
         at.addRow("System audio", self.loopback)
+        at.addRow("Speech model", self.stt_model)
         at.addRow("End of phrase pause", self.vad_silence)
         at.addRow("Context sent to model", self.context)
 
@@ -213,10 +229,15 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(self.tabs)
         self.setMinimumWidth(480)
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Apply
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        self.buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self._apply)
+        layout.addWidget(self.buttons)
 
         self._meter_source = None
         self._meter_timer = QTimer(self)
@@ -229,6 +250,12 @@ class SettingsDialog(QDialog):
         self.provider.currentIndexChanged.connect(self._on_provider_changed)
         self.provider.setCurrentIndex(max(0, self.provider.findData(settings.provider)))
         self._on_provider_changed()
+
+    def _apply(self) -> None:
+        """Apply without closing: later Apply/OK compare against these values."""
+        new = self.result_settings()
+        self._original = new
+        self.applied.emit(new)
 
     # ---- microphone gain and level meter ----------------------------------
 
@@ -368,6 +395,7 @@ class SettingsDialog(QDialog):
             mic_gain=self._gain(),
             loopback_device=self.loopback.currentData(),
             vad_silence_ms=self.vad_silence.value(),
+            stt_model=self.stt_model.currentData(),
             context_seconds=self.context.value(),
             hotkeys=hotkeys,
         )
