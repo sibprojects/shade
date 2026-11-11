@@ -47,6 +47,7 @@ DEFAULT_HOTKEYS = {
     "screenshot": "<ctrl>+<alt>+s",
     "toggle_view": "<ctrl>+<alt>+v",
     "toggle_overlay": "<ctrl>+<alt>+o",
+    "toggle_window": "<ctrl>+<alt>+w",
     "click_through": "<ctrl>+<alt>+c",
     "dismiss": "<ctrl>+<alt>+d",
     "toggle_auto": "<ctrl>+<alt>+q",
@@ -78,7 +79,7 @@ class Settings:
     mic_device: str | None = None
     loopback_device: str | None = None
     mic_gain: float = 1.0  # x1..x20, applied before speech detection
-    stt_model: str = "distil-large-v3"
+    stt_model: str = "large-v3-turbo"  # or "large-v3" (most accurate) / "distil-large-v3"
     stt_compute: str = "float16"
     stt_model_light: str = "small.en"
     stt_compute_light: str = "int8_float16"

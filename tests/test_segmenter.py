@@ -37,7 +37,7 @@ def test_one_utterance_with_pre_roll():
     source, audio, start, end = out[0]
     assert source == "them"
     assert start == pytest.approx(0.3, abs=0.05)
-    assert end == pytest.approx(1.5, abs=0.05)
+    assert end == pytest.approx(1.7, abs=0.05)  # speech ends at 1.5 + 0.2 s tail
     assert len(audio) == pytest.approx((end - start) * RATE, abs=CHUNK)
 
 

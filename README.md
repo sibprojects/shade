@@ -59,31 +59,32 @@ the text itself stays fully opaque.
 </table>
 
 **Tray menu and settings** — Shade lives in the system tray (the black-and-gray
-gem with an **S**). Right-click it for the menu; **Settings…** has four tabs.
+gem with an **S**). Right-click it for the menu; **Settings…** has four tabs,
+and **Apply** changes things without closing the window.
 
 <table>
   <tr>
     <td align="center"><img src="docs/images/tray-menu-2.png" alt="Tray menu" height="290"></td>
-    <td align="center"><img src="docs/images/settings-model-2.png" alt="Settings: Model tab with Claude" width="400"></td>
+    <td align="center"><img src="docs/images/settings-model-3.png" alt="Settings: Model tab with Claude" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Tray menu</b></td>
     <td align="center"><b>Model — Claude</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/settings-model-grok-2.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
-    <td align="center"><img src="docs/images/settings-display-2.png" alt="Settings: Display tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-model-grok-3.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
+    <td align="center"><img src="docs/images/settings-display-3.png" alt="Settings: Display tab" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Model — Grok (OpenAI-compatible)</b></td>
     <td align="center"><b>Display — theme, font sizes, overlay colors and opacity</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/settings-audio-2.png" alt="Settings: Audio tab" width="400"></td>
-    <td align="center"><img src="docs/images/settings-hotkeys-2.png" alt="Settings: Hotkeys tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-audio-3.png" alt="Settings: Audio tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-hotkeys-3.png" alt="Settings: Hotkeys tab" width="400"></td>
   </tr>
   <tr>
-    <td align="center"><b>Audio — devices, mic gain and level, pause, context</b></td>
+    <td align="center"><b>Audio — devices, mic gain and level, speech model, pause, context</b></td>
     <td align="center"><b>Hotkeys</b></td>
   </tr>
 </table>
@@ -96,8 +97,11 @@ gem with an **S**). Right-click it for the menu; **Settings…** has four tabs.
   (Zoom, Teams, Meet, any app) is *Them*. No speaker diarization: the label
   comes from the source.
 - **Speech-to-text:** runs locally on the GPU with faster-whisper
-  (`distil-large-v3`, float16). Silero VAD cuts speech into utterances on a
-  ~600 ms pause. Nothing is sent to the cloud for transcription.
+  (`large-v3-turbo`, float16; `large-v3` or `distil-large-v3` in Settings).
+  Silero VAD cuts speech into utterances on a ~600 ms pause and keeps 0.2 s
+  after the last word. The model also gets the call topic from the profile
+  and the last two lines of the conversation, which helps with names and
+  terms. Nothing is sent to the cloud for transcription.
 - **Three triggers:**
   - **Auto:** a small, fast model checks each *Them* utterance for a question
     or a task, including indirect ones like "walk us through…".
@@ -195,6 +199,7 @@ and Shade warns when GPU memory is above 90%. Small quantized models
 | Screenshot a region | `Ctrl+Alt+S` |
 | Switch window / overlay | `Ctrl+Alt+V` |
 | Show / hide overlay | `Ctrl+Alt+O` |
+| Show / hide window | `Ctrl+Alt+W` |
 | Toggle overlay click-through | `Ctrl+Alt+C` |
 | Dismiss the current hint | `Ctrl+Alt+D` |
 | Toggle auto hints | `Ctrl+Alt+Q` |
@@ -235,7 +240,7 @@ $env:ANTHROPIC_API_KEY = "sk-ant-..."   # or the key for the provider you use
 uv run python -m shade
 ```
 
-The first start downloads the speech model (`distil-large-v3`, ~1.5 GB) to
+The first start downloads the speech model (`large-v3-turbo`, ~1.6 GB) to
 the Hugging Face cache. A tray icon appears; when its tooltip says
 **ready**, right-click it → **Start session** → pick a profile.
 
@@ -257,7 +262,8 @@ On an RTX 3070 Ti (8 GB), Windows 11:
 
 | What | Result |
 |---|---|
-| Speech-to-text, `distil-large-v3` float16, 7.8 s phrase | 0.25 s |
+| Speech-to-text, `large-v3-turbo` float16, 7.8 s phrase | 0.20–0.27 s |
+| Speech-to-text, `large-v3` float16, same phrase | 0.39–0.46 s |
 | Speech-to-text, `small.en` int8 (local-model mode), same phrase | 0.15 s |
 | End of speech → first hint word, excluding model time | ~0.8–0.9 s |
 

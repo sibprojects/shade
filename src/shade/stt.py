@@ -30,6 +30,30 @@ def is_junk(text: str) -> bool:
     return stripped.lower().strip(".!?, ") in _JUNK
 
 
+MAX_PROMPT_CHARS = 600
+
+
+def _call_topic(profile_text: str) -> str:
+    """Lines of the profile's '## This call' section, as one sentence-ish string."""
+    lines, inside = [], False
+    for line in profile_text.splitlines():
+        if line.startswith("## "):
+            inside = line[3:].strip().lower() == "this call"
+            continue
+        if inside and line.strip():
+            lines.append(line.strip().lstrip("-*").strip())
+    return " ".join(lines)
+
+
+def build_stt_prompt(profile_text: str, recent: list[Utterance]) -> str | None:
+    """Context for the speech model: the call topic from the profile plus the
+    last two lines of the conversation. Helps with names and domain terms."""
+    topic = _call_topic(profile_text)[: MAX_PROMPT_CHARS // 2]
+    tail = " ".join(u.text for u in recent[-2:])[-(MAX_PROMPT_CHARS // 2 - 1):]
+    prompt = " ".join(p for p in (topic, tail) if p).strip()
+    return prompt or None
+
+
 class Transcriber:
     def __init__(self, model: str, compute_type: str, device: str = "cuda") -> None:
         from shade.gpu import setup_cuda_dlls
@@ -39,7 +63,7 @@ class Transcriber:
 
         self.model = WhisperModel(model, device=device, compute_type=compute_type)
 
-    def transcribe(self, audio: np.ndarray) -> str:
+    def transcribe(self, audio: np.ndarray, prompt: str | None = None) -> str:
         segments, _ = self.model.transcribe(
             audio,
             language="en",
@@ -47,6 +71,7 @@ class Transcriber:
             vad_filter=False,
             condition_on_previous_text=False,
             without_timestamps=True,
+            initial_prompt=prompt,
         )
         return " ".join(s.text.strip() for s in segments).strip()
 
@@ -57,8 +82,10 @@ class SttWorker:
         transcriber,
         on_utterance: Callable[[Utterance], None],
         on_error: Callable[[str], None] | None = None,
+        prompt_fn: Callable[[], str | None] | None = None,
     ) -> None:
         self.transcriber = transcriber
+        self.prompt_fn = prompt_fn
         self.on_utterance = on_utterance
         self.on_error = on_error or (lambda msg: None)
         self._q: queue.Queue = queue.Queue()
@@ -80,7 +107,10 @@ class SttWorker:
                 return
             source, audio, start, end = item
             try:
-                text = self.transcriber.transcribe(audio)
+                if self.prompt_fn is not None:
+                    text = self.transcriber.transcribe(audio, prompt=self.prompt_fn())
+                else:
+                    text = self.transcriber.transcribe(audio)
             except Exception as e:
                 self.on_error(f"Speech recognition error: {e}")
                 continue

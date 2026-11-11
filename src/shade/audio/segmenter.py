@@ -25,6 +25,7 @@ class Segmenter:
         min_speech_ms: int = 250,
         max_utterance_s: float = 20.0,
         pre_roll_ms: int = 200,
+        tail_ms: int = 200,
     ) -> None:
         self.source = source
         self.speech_prob = speech_prob
@@ -35,6 +36,9 @@ class Segmenter:
         self.min_voiced = max(1, round(min_speech_ms / 1000 / CHUNK_S))
         self.max_chunks = int(max_utterance_s / CHUNK_S)
         self._pre_roll: deque[np.ndarray] = deque(maxlen=round(pre_roll_ms / 1000 / CHUNK_S))
+        # Audio kept after the last voiced chunk, so the end of the last word
+        # (soft consonants the VAD scores low) isn't cut off.
+        self.tail_chunks = round(tail_ms / 1000 / CHUNK_S)
         self._buf = np.zeros(0, dtype=np.float32)
         self._buf_t = 0.0  # session time of the first sample in _buf
         self._reset_utterance()
@@ -90,7 +94,7 @@ class Segmenter:
 
     def _emit(self, force: bool = False) -> None:
         if force or self._voiced >= self.min_voiced:
-            kept = self._chunks[: self._last_voiced_idx + 1]
+            kept = self._chunks[: self._last_voiced_idx + 1 + (0 if force else self.tail_chunks)]
             audio = np.concatenate(kept)
             end = self._start + len(kept) * CHUNK_S
             self.on_utterance(self.source, audio, self._start, end)
