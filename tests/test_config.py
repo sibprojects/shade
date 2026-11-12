@@ -48,21 +48,47 @@ def test_presets_merge(tmp_path):
     s = load_settings(path)
     assert s.presets["grok"]["model"] == "x"
     assert s.presets["grok"]["base_url"] == "https://api.x.ai/v1"
-    assert set(s.presets) == {"openai", "grok", "groq", "deepseek", "gemini", "local", "custom"}
+    assert set(s.presets) == {"openai", "grok", "groq", "deepseek", "gemini", "local", "network", "custom"}
 
 
 def test_default_end_of_phrase_pause_is_600_ms():
     assert Settings().vad_silence_ms == 600
 
 
-def test_stt_config_full_when_local_model_runs_on_another_pc():
+def test_two_local_presets_this_pc_and_network_pc():
+    s = Settings()
+    assert s.presets["local"]["label"] == "Local model (this PC)"
+    assert s.presets["local"]["base_url"] == "http://localhost:11434/v1"
+    assert s.presets["network"]["label"] == "Local model (network PC)"
+    assert s.presets["network"]["key_env"] == ""
+    assert s.presets["network"]["base_url"].startswith("http://192.168.")
+
+
+def test_stt_config_full_for_network_pc_model():
+    assert stt_config(Settings(provider="network")) == ("large-v3-turbo", "float16")
+
+
+def test_stt_config_full_when_local_preset_points_to_another_pc():
     s = Settings(provider="local")
     s.presets["local"]["base_url"] = "http://192.168.1.50:11434/v1"
     assert stt_config(s) == ("large-v3-turbo", "float16")
 
 
-def test_stt_config_light_for_loopback_addresses():
-    for url in ("http://127.0.0.1:11434/v1", "http://LOCALHOST:1234/v1", "http://[::1]:11434/v1"):
-        s = Settings(provider="local")
-        s.presets["local"]["base_url"] = url
+def test_stt_config_light_for_any_preset_on_loopback():
+    for provider, url in (
+        ("local", "http://127.0.0.1:11434/v1"),
+        ("network", "http://LOCALHOST:1234/v1"),
+        ("custom", "http://[::1]:8000/v1"),
+    ):
+        s = Settings(provider=provider)
+        s.presets.setdefault("custom", dict(s.presets["local"]))
+        s.presets[provider]["base_url"] = url
         assert stt_config(s) == ("small.en", "int8_float16"), url
+
+
+def test_builtin_preset_labels_are_not_taken_from_old_settings(tmp_path):
+    path = tmp_path / "s.toml"
+    path.write_text('[presets.local]\nlabel = "Local model"\nmodel = "m"\n', encoding="utf-8")
+    s = load_settings(path)
+    assert s.presets["local"]["label"] == "Local model (this PC)"
+    assert s.presets["local"]["model"] == "m"

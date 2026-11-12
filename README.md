@@ -180,21 +180,23 @@ source keeps working.
 | Groq | `GROQ_API_KEY` | model-dependent | very low latency |
 | DeepSeek | `DEEPSEEK_API_KEY` | no | |
 | Gemini | `GEMINI_API_KEY` | yes | OpenAI-compatible endpoint |
-| Local | — | model-dependent | Ollama / LM Studio on this PC |
+| Local model (this PC) | — | model-dependent | Ollama / LM Studio on this PC |
+| Local model (network PC) | — | model-dependent | Ollama on another computer in your network |
 
 Keys are read from environment variables or the git-ignored `.env` file. They are never written to
 settings, logs or session files. Model names, base URLs and image support are
 editable per provider, and you can add your own OpenAI-compatible preset.
 
-**Local model on the same GPU:** with the local provider, speech-to-text
+**Local model on the same GPU:** with **Local model (this PC)**, speech-to-text
 switches to a lighter setup (`small.en`, int8) to leave VRAM for the model,
 and Shade warns when GPU memory is above 90%. Small quantized models
 (~3–8B, Q4) are recommended; for screenshots, use one with vision.
 
 **Local model on another PC:** run Ollama there with `OLLAMA_HOST=0.0.0.0`,
-allow TCP port 11434 in its firewall, and set the Local preset's base URL to
+allow TCP port 11434 in its firewall, choose **Local model (network PC)** and set its base URL to
 `http://<that-pc-ip>:11434/v1`. Speech-to-text then keeps the full model,
-because this GPU is not shared.
+because this GPU is not shared. **Test connection** in Settings → Model
+checks the address and lists the models the server has.
 
 ## Hotkeys
 
