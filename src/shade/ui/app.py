@@ -17,7 +17,15 @@ from shade import gpu
 from shade.audio.capture import LoopbackSource, MicSource, list_devices
 from shade.audio.segmenter import Segmenter
 from shade.audio.vad import SileroVad
-from shade.config import DEFAULT_SETTINGS_PATH, Settings, load_settings, save_settings, stt_config
+from shade.config import (
+    DEFAULT_SETTINGS_PATH,
+    Settings,
+    auto_allowed,
+    billable_prices,
+    load_settings,
+    save_settings,
+    stt_config,
+)
 from shade.cost import CostMeter
 from shade.detect import Detector
 from shade.engine import Engine
@@ -38,6 +46,10 @@ from shade.ui.settings_dialog import SettingsDialog
 CAPTURE_WARNING = "Warning: window may be visible in screen sharing."
 VRAM_WARNING = "GPU memory almost full — hints may lag."
 NEXT_SESSION = "Applies to the next session."
+AUTO_BLOCKED = (
+    "Auto hints are off for Claude Code (subscription): ask with the hotkey, "
+    "or allow them in Settings → Model."
+)
 
 
 class Session:
@@ -47,6 +59,7 @@ class Session:
         # A provider that can't be built (e.g. missing key) still lets the session
         # transcribe; every hint then shows the reason in the hint area.
         provider, self.provider_problem = make_provider_or_unavailable(settings)
+        self.provider = provider
         status = lambda msg: bridge.emit_event(Status(msg))  # noqa: E731
         start = time.monotonic()
         clock = lambda: time.monotonic() - start  # noqa: E731
@@ -56,13 +69,13 @@ class Session:
             detector=Detector(provider, on_error=status),
             transcript=Transcript(),
             writer=self.writer,
-            cost=CostMeter(settings.prices),
+            cost=CostMeter(billable_prices(settings)),
             profile_text=profile.read_text(encoding="utf-8", errors="replace"),
             context_seconds=settings.context_seconds,
             on_event=bridge.emit_event,
             clock=clock,
         )
-        self.engine.set_auto(settings.auto_enabled)
+        self.engine.set_auto(settings.auto_enabled and auto_allowed(settings))
         profile_text = profile.read_text(encoding="utf-8", errors="replace")
         transcript = self.engine.transcript
         self.stt = SttWorker(
@@ -88,6 +101,9 @@ class Session:
             s.stop()
         self.stt.stop()
         self.engine.stop()
+        close = getattr(self.provider, "close", None)
+        if close is not None:
+            close()  # e.g. Claude Code processes started in advance
         self.writer.close()
 
 
@@ -276,6 +292,8 @@ class ShadeApp(QObject):
         self.tray.setToolTip(f"Shade — session: {profile.stem}")
         self.show_current_view()
         self.bridge.emit_event(Status(f"Session started: {profile.stem}"))
+        if self.settings.auto_enabled and not auto_allowed(self.settings):
+            self.bridge.emit_event(Status(AUTO_BLOCKED))
         if self.session.provider_problem:
             self.bridge.emit_event(HintError(0, self.session.provider_problem))
             self.notify(self.session.provider_problem)
@@ -294,7 +312,9 @@ class ShadeApp(QObject):
         self.settings.auto_enabled = on
         save_settings(self.settings, self.settings_path)
         if self.session:
-            self.session.engine.set_auto(on)
+            self.session.engine.set_auto(on and auto_allowed(self.settings))
+        if on and not auto_allowed(self.settings):
+            self.bridge.emit_event(Status(AUTO_BLOCKED))
         if self.auto_action.isChecked() != on:
             self.auto_action.setChecked(on)
 

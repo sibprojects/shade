@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 
 from shade.config import Settings
 from shade.llm.check import check_connection
+from shade.llm.claude_code import find_claude
 from shade.ui.hotkeys import ACTIONS
 
 DEFAULT_DEVICE = "(default)"
@@ -83,6 +84,7 @@ class SettingsDialog(QDialog):
         # --- provider ---
         self.provider = QComboBox()
         self.provider.addItem("Claude", "claude")
+        self.provider.addItem("Claude Code (subscription)", "claude_code")
         for key, p in self._presets.items():
             self.provider.addItem(p.get("label", key), key)
         self.claude_model = QLineEdit(settings.claude_model)
@@ -103,6 +105,30 @@ class SettingsDialog(QDialog):
         cf.addRow("Answer model", self.claude_model)
         cf.addRow("Detector model", self.claude_detector)
         cf.addRow("Effort", self.claude_effort)
+        self.cc_model = QLineEdit(settings.cc_model)
+        self.cc_detector = QLineEdit(settings.cc_detector_model)
+        self.cc_effort = QComboBox()
+        self.cc_effort.addItems(["low", "medium", "high"])
+        self.cc_effort.setCurrentText(settings.cc_effort)
+        self.cc_path = QLineEdit(settings.cc_path)
+        self.cc_path.setPlaceholderText("found automatically")
+        self.cc_path.textChanged.connect(self._update_key_status)
+        self.cc_auto = QCheckBox("Allow auto hints (many requests)")
+        self.cc_auto.setChecked(settings.cc_auto)
+        self.cc_warning = QLabel(
+            "Uses the installed Claude Code with your own Claude sign-in, for your personal use. "
+            "Answers count toward your subscription's usage limits; auto hints send a request "
+            "for every phrase and can use them up mid-call. Anthropic's terms apply."
+        )
+        self.cc_warning.setWordWrap(True)
+        self.cc_box = QGroupBox("Claude Code (subscription)")
+        ccf = QFormLayout(self.cc_box)
+        ccf.addRow("Answer model", self.cc_model)
+        ccf.addRow("Detector model", self.cc_detector)
+        ccf.addRow("Effort", self.cc_effort)
+        ccf.addRow("Claude Code path", self.cc_path)
+        ccf.addRow("", self.cc_auto)
+        ccf.addRow(self.cc_warning)
         self.preset_box = QGroupBox("OpenAI-compatible service")
         pf = QFormLayout(self.preset_box)
         pf.addRow("Base URL", self.base_url)
@@ -201,6 +227,7 @@ class SettingsDialog(QDialog):
         form.addRow("", self.key_status)
         mt.addLayout(form)
         mt.addWidget(self.claude_box)
+        mt.addWidget(self.cc_box)
         mt.addWidget(self.preset_box)
         mt.addStretch(1)
 
@@ -344,9 +371,11 @@ class SettingsDialog(QDialog):
         self._store_shown_preset()
         key = self.provider.currentData()
         is_claude = key == "claude"
+        is_cc = key == "claude_code"
         self.claude_box.setVisible(is_claude)
-        self.preset_box.setVisible(not is_claude)
-        if is_claude:
+        self.cc_box.setVisible(is_cc)
+        self.preset_box.setVisible(not is_claude and not is_cc)
+        if is_claude or is_cc:
             self._shown_preset = None
             env = "ANTHROPIC_API_KEY"
         else:
@@ -359,6 +388,17 @@ class SettingsDialog(QDialog):
             env = p.get("key_env") or ""
         self.network_hint.setVisible(key == "network")
         self.test_result.clear()
+        self._update_key_status()
+
+    def _update_key_status(self, *_) -> None:
+        key = self.provider.currentData()
+        if key == "claude_code":
+            exe = find_claude(self.cc_path.text().strip())
+            self.key_status.setText(
+                f"Uses your Claude subscription · {exe}" if exe else "Claude Code not found: install it or set its path"
+            )
+            return
+        env = "ANTHROPIC_API_KEY" if key == "claude" else (self._presets.get(key, {}).get("key_env") or "")
         if not env:
             self.key_status.setText("No API key needed")
         elif os.environ.get(env):
@@ -410,6 +450,11 @@ class SettingsDialog(QDialog):
             claude_model=self.claude_model.text().strip(),
             claude_detector_model=self.claude_detector.text().strip(),
             claude_effort=self.claude_effort.currentText(),
+            cc_model=self.cc_model.text().strip(),
+            cc_detector_model=self.cc_detector.text().strip(),
+            cc_effort=self.cc_effort.currentText(),
+            cc_path=self.cc_path.text().strip(),
+            cc_auto=self.cc_auto.isChecked(),
             presets=copy.deepcopy(self._presets),
             display_mode=self.display_mode.currentData(),
             window_theme=self.window_theme.currentData(),

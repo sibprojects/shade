@@ -91,3 +91,30 @@ def test_test_connection_uses_the_fields_as_typed(qtbot, monkeypatch):
     d.test_button.click()
     assert calls == [("http://10.0.0.7:11434/v1", "local", "m1")]
     assert d.test_result.text() == "Connected. Available models: m1"
+
+
+def test_claude_code_provider_settings(qtbot, monkeypatch):
+    import shade.ui.settings_dialog as sd
+    monkeypatch.setattr(sd, "find_claude", lambda path="": r"C:\x\claude.exe")
+    d = SettingsDialog(Settings(provider="claude_code"), DEVICES)
+    qtbot.addWidget(d)
+    assert d.provider.currentText() == "Claude Code (subscription)"
+    assert not d.cc_box.isHidden() and d.claude_box.isHidden() and d.preset_box.isHidden()
+    assert "claude.exe" in d.key_status.text() and "subscription" in d.key_status.text()
+    assert "limits" in d.cc_warning.text()
+    assert not d.cc_auto.isChecked()
+    d.cc_model.setText("claude-opus-5-5")
+    d.cc_effort.setCurrentText("medium")
+    d.cc_path.setText(r"D:\tools\claude.exe")
+    d.cc_auto.setChecked(True)
+    s = d.result_settings()
+    assert (s.provider, s.cc_model, s.cc_effort, s.cc_path, s.cc_auto) == (
+        "claude_code", "claude-opus-5-5", "medium", r"D:\tools\claude.exe", True)
+
+
+def test_claude_code_not_found_is_shown(qtbot, monkeypatch):
+    import shade.ui.settings_dialog as sd
+    monkeypatch.setattr(sd, "find_claude", lambda path="": None)
+    d = SettingsDialog(Settings(provider="claude_code"), DEVICES)
+    qtbot.addWidget(d)
+    assert "not found" in d.key_status.text()
