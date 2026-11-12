@@ -191,6 +191,11 @@ switches to a lighter setup (`small.en`, int8) to leave VRAM for the model,
 and Shade warns when GPU memory is above 90%. Small quantized models
 (~3–8B, Q4) are recommended; for screenshots, use one with vision.
 
+**Local model on another PC:** run Ollama there with `OLLAMA_HOST=0.0.0.0`,
+allow TCP port 11434 in its firewall, and set the Local preset's base URL to
+`http://<that-pc-ip>:11434/v1`. Speech-to-text then keeps the full model,
+because this GPU is not shared.
+
 ## Hotkeys
 
 | Action | Keys |

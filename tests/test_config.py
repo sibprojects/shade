@@ -53,3 +53,16 @@ def test_presets_merge(tmp_path):
 
 def test_default_end_of_phrase_pause_is_600_ms():
     assert Settings().vad_silence_ms == 600
+
+
+def test_stt_config_full_when_local_model_runs_on_another_pc():
+    s = Settings(provider="local")
+    s.presets["local"]["base_url"] = "http://192.168.1.50:11434/v1"
+    assert stt_config(s) == ("large-v3-turbo", "float16")
+
+
+def test_stt_config_light_for_loopback_addresses():
+    for url in ("http://127.0.0.1:11434/v1", "http://LOCALHOST:1234/v1", "http://[::1]:11434/v1"):
+        s = Settings(provider="local")
+        s.presets["local"]["base_url"] = url
+        assert stt_config(s) == ("small.en", "int8_float16"), url
