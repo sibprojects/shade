@@ -69,6 +69,12 @@ class Settings:
     claude_model: str = "claude-opus-5-5"
     claude_effort: str = "low"
     claude_detector_model: str = "claude-haiku-5-5"
+    # Claude Code (subscription): the installed `claude` CLI with the user's own sign-in.
+    cc_model: str = "claude-sonnet-5-5"
+    cc_detector_model: str = "claude-haiku-5-5"
+    cc_effort: str = "low"
+    cc_path: str = ""  # empty: find `claude` automatically
+    cc_auto: bool = False  # auto hints send many requests and use up subscription limits
     presets: dict[str, dict] = field(default_factory=lambda: copy.deepcopy(DEFAULT_PRESETS))
     display_mode: str = "window"
     window_theme: str = "day"  # "day" | "night"
@@ -101,9 +107,19 @@ def _on_this_pc(base_url: str) -> bool:
 
 def llm_on_this_pc(s: Settings) -> bool:
     """True when the answer model runs on this computer's GPU."""
-    if s.provider == "claude":
+    if s.provider not in s.presets:  # Claude API, Claude Code: not on this GPU
         return False
     return _on_this_pc(s.presets.get(s.provider, {}).get("base_url", ""))
+
+
+def auto_allowed(s: Settings) -> bool:
+    """Auto hints with Claude Code (subscription) only when explicitly allowed."""
+    return s.provider != "claude_code" or s.cc_auto
+
+
+def billable_prices(s: Settings) -> dict[str, list[float]]:
+    """Prices for the session cost; subscription answers aren't billed per token."""
+    return {} if s.provider == "claude_code" else s.prices
 
 
 def stt_config(s: Settings) -> tuple[str, str]:

@@ -7,6 +7,7 @@ import os
 from shade.config import Settings
 from shade.llm.base import Provider, ProviderError
 from shade.llm.claude import ClaudeProvider
+from shade.llm.claude_code import ClaudeCodeProvider, find_claude
 from shade.llm.openai_compat import OpenAIProvider
 from shade.models import Usage
 
@@ -41,6 +42,11 @@ def make_provider_or_unavailable(s: Settings) -> tuple[Provider, str | None]:
 def make_provider(s: Settings) -> Provider:
     if s.provider == "claude":
         return ClaudeProvider(s.claude_model, s.claude_detector_model, s.claude_effort)
+    if s.provider == "claude_code":
+        exe = find_claude(s.cc_path)
+        if exe is None:
+            raise ProviderError("Claude Code not found. Install it or set its path in Settings → Model.")
+        return ClaudeCodeProvider(s.cc_model, s.cc_detector_model, s.cc_effort, command=[exe])
     p = s.presets.get(s.provider)
     if p is None:
         raise ProviderError(f"Unknown provider: {s.provider}")

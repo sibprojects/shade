@@ -175,6 +175,7 @@ source keeps working.
 | Provider | Key variable | Images | Notes |
 |---|---|---|---|
 | Claude | `ANTHROPIC_API_KEY` | yes | default; answers on Opus 5.5 (low effort), detection on Haiku 5.5 |
+| Claude Code (subscription) | — (your Claude sign-in) | yes | the installed `claude` CLI in headless mode; Sonnet 5.5 by default |
 | OpenAI | `OPENAI_API_KEY` | yes | |
 | Grok (xAI) | `XAI_API_KEY` | yes | OpenAI-compatible |
 | Groq | `GROQ_API_KEY` | model-dependent | very low latency |
@@ -197,6 +198,16 @@ allow TCP port 11434 in its firewall, choose **Local model (network PC)** and se
 `http://<that-pc-ip>:11434/v1`. Speech-to-text then keeps the full model,
 because this GPU is not shared. **Test connection** in Settings → Model
 checks the address and lists the models the server has.
+
+**Claude Code (subscription):** answers come from the installed, unmodified
+Claude Code (`claude -p`, stream-json) signed in with your own Claude account,
+so they use your subscription instead of API credit. Tools, MCP servers and
+project settings are off, and the system prompt is Shade's own. Each question
+runs in its own process, and the next one is started in advance: measured
+first token 0.64–0.72 s (1.2 s for the very first question). Answers count
+toward your plan's usage limits, so auto hints are off with this provider
+unless you allow them in Settings → Model. Use it for yourself only; see
+[Claude Code legal and compliance](https://code.claude.com/docs/en/legal-and-compliance).
 
 ## Hotkeys
 
