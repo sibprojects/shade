@@ -182,7 +182,7 @@ source keeps working.
 | Gemini | `GEMINI_API_KEY` | yes | OpenAI-compatible endpoint |
 | Local | — | model-dependent | Ollama / LM Studio on this PC |
 
-Keys are read from environment variables only. They are never written to
+Keys are read from environment variables or the git-ignored `.env` file. They are never written to
 settings, logs or session files. Model names, base URLs and image support are
 editable per provider, and you can add your own OpenAI-compatible preset.
 
@@ -236,9 +236,13 @@ sessions/       saved calls (git-ignored)
 git clone https://github.com/sibprojects/shade.git
 cd shade
 uv sync
-$env:ANTHROPIC_API_KEY = "sk-ant-..."   # or the key for the provider you use
+copy .env.example .env   # then put your key(s) into .env
 uv run python -m shade
 ```
+
+API keys go into `.env` in the project folder (it is in `.gitignore`), e.g.
+`ANTHROPIC_API_KEY=sk-ant-...`. Variables already set in the environment
+take precedence over the file.
 
 The first start downloads the speech model (`large-v3-turbo`, ~1.6 GB) to
 the Hugging Face cache. A tray icon appears; when its tooltip says
