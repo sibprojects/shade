@@ -40,7 +40,9 @@ DEFAULT_PRESETS: dict[str, dict] = {
         "GEMINI_API_KEY",
         True,
     ),
-    "local": _preset("Local model", "http://localhost:11434/v1", "qwen2.5vl:7b", "", True),
+    "local": _preset("Local model (this PC)", "http://localhost:11434/v1", "qwen2.5vl:7b", "", True),
+    # Ollama on another computer in the home network: put its IP address here.
+    "network": _preset("Local model (network PC)", "http://192.168.1.50:11434/v1", "gemma3:12b", "", True),
 }
 
 DEFAULT_HOTKEYS = {
@@ -97,10 +99,17 @@ def _on_this_pc(base_url: str) -> bool:
     return host in ("localhost", "127.0.0.1", "::1") or host.startswith("127.")
 
 
+def llm_on_this_pc(s: Settings) -> bool:
+    """True when the answer model runs on this computer's GPU."""
+    if s.provider == "claude":
+        return False
+    return _on_this_pc(s.presets.get(s.provider, {}).get("base_url", ""))
+
+
 def stt_config(s: Settings) -> tuple[str, str]:
-    """Speech model and compute type; lighter when a local LLM shares the GPU
-    (a "local" model on another PC in the network leaves this GPU alone)."""
-    if s.provider == "local" and _on_this_pc(s.presets.get("local", {}).get("base_url", "")):
+    """Speech model and compute type; lighter when the answer model shares this
+    GPU (a model on another PC in the network leaves it alone)."""
+    if llm_on_this_pc(s):
         return s.stt_model_light, s.stt_compute_light
     return s.stt_model, s.stt_compute
 
@@ -109,6 +118,8 @@ def _merge_presets(saved: dict) -> dict[str, dict]:
     merged = copy.deepcopy(DEFAULT_PRESETS)
     for key, values in saved.items():
         merged[key] = {**merged.get(key, {}), **values}
+        if key in DEFAULT_PRESETS:  # built-in names follow the app, not old files
+            merged[key]["label"] = DEFAULT_PRESETS[key]["label"]
     return merged
 
 

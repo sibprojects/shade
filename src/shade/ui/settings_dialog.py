@@ -9,6 +9,7 @@ from dataclasses import replace
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QColorDialog,
     QComboBox,
@@ -30,6 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from shade.config import Settings
+from shade.llm.check import check_connection
 from shade.ui.hotkeys import ACTIONS
 
 DEFAULT_DEVICE = "(default)"
@@ -107,6 +109,18 @@ class SettingsDialog(QDialog):
         pf.addRow("Answer model", self.preset_model)
         pf.addRow("Detector model", self.preset_detector)
         pf.addRow("", self.preset_images)
+        self.test_button = QPushButton("Test connection")
+        self.test_button.clicked.connect(self._test_connection)
+        self.test_result = QLabel()
+        self.test_result.setWordWrap(True)
+        self.test_result.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        pf.addRow(self.test_button, self.test_result)
+        self.network_hint = QLabel(
+            "On the other PC: install Ollama, run  setx OLLAMA_HOST 0.0.0.0  and restart Ollama, "
+            "allow TCP port 11434 in its firewall, then put that PC's IP address into Base URL."
+        )
+        self.network_hint.setWordWrap(True)
+        pf.addRow(self.network_hint)
 
         prov_row = QHBoxLayout()
         prov_row.addWidget(self.provider, 1)
@@ -343,12 +357,27 @@ class SettingsDialog(QDialog):
             self.preset_detector.setText(p.get("detector_model", ""))
             self.preset_images.setChecked(bool(p.get("supports_images", True)))
             env = p.get("key_env") or ""
+        self.network_hint.setVisible(key == "network")
+        self.test_result.clear()
         if not env:
             self.key_status.setText("No API key needed")
         elif os.environ.get(env):
             self.key_status.setText(f"{env} is set")
         else:
             self.key_status.setText(f"{env} is not set")
+
+    def _test_connection(self) -> None:
+        env = (self._presets.get(self._shown_preset or "", {}).get("key_env") or "")
+        key = os.environ.get(env, "") if env else "local"
+        self.test_result.setText("Checking…")
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            _, message = check_connection(
+                self.base_url.text().strip(), key, self.preset_model.text().strip(), timeout=5
+            )
+        finally:
+            QApplication.restoreOverrideCursor()
+        self.test_result.setText(message)
 
     def _ask_custom_preset(self) -> None:
         name, ok = QInputDialog.getText(self, "Custom preset", "Preset name (letters, digits, dashes):")
