@@ -6,6 +6,7 @@ import copy
 import tomllib
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
+from urllib.parse import urlparse
 
 import tomli_w
 
@@ -91,9 +92,15 @@ class Settings:
     prices: dict[str, list[float]] = field(default_factory=lambda: copy.deepcopy(DEFAULT_PRICES))
 
 
+def _on_this_pc(base_url: str) -> bool:
+    host = (urlparse(base_url).hostname or "localhost").lower()
+    return host in ("localhost", "127.0.0.1", "::1") or host.startswith("127.")
+
+
 def stt_config(s: Settings) -> tuple[str, str]:
-    """Speech model and compute type; lighter when a local LLM shares the GPU."""
-    if s.provider == "local":
+    """Speech model and compute type; lighter when a local LLM shares the GPU
+    (a "local" model on another PC in the network leaves this GPU alone)."""
+    if s.provider == "local" and _on_this_pc(s.presets.get("local", {}).get("base_url", "")):
         return s.stt_model_light, s.stt_compute_light
     return s.stt_model, s.stt_compute
 
