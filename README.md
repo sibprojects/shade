@@ -291,7 +291,8 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   `profiles/example.md`) or use **Browse…**.
 - **Settings:** tray → **Settings…** (provider, models, display, audio
   devices, hotkeys). Saved to `settings.toml` next to the app, without keys.
-- **Code in hints:** shown white on black and wrapped to the width of the
+- **Code in hints:** shown on black with syntax colors for PHP, Python and Go
+  (the language comes from the code fence), wrapped to the width of the
   window, so there is no sideways scrolling; its font size is set separately
   (Settings → Display, 2 pt smaller than the text by default).
 - **Sessions:** tray → **Open sessions folder**.

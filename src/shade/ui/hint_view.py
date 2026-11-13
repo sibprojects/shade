@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QColor, QFont, QTextCursor, QTextDocument, QTextFormat
+from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
 from PySide6.QtWidgets import (
     QLabel,
     QPlainTextEdit,
@@ -24,23 +24,45 @@ from shade.models import (
     UtteranceAdded,
 )
 from shade.transcript import format_lines
+from shade.ui.syntax import SYNTAX, lexer_for, spans
 
 ERROR_MS = 8000
 CODE_BG = QColor("#000000")
 CODE_FG = QColor("#e8e8e8")
 CODE_FONTS = ["Consolas", "Cascadia Mono", "Courier New"]
+CODE_GAP = 8  # px above and below a code block
+
+
+def _is_code(block) -> bool:
+    fmt = block.blockFormat()
+    return fmt.hasProperty(QTextFormat.Property.BlockCodeFence) or fmt.nonBreakableLines()
 
 
 def style_code_blocks(doc: QTextDocument, point_size: int) -> None:
-    """Code blocks from Markdown: white on black, own font size, and wrapped
-    to the width of the view instead of needing a horizontal scrollbar."""
+    """Code blocks from Markdown: on black, own font size, wrapped to the width
+    of the view instead of needing a horizontal scrollbar, and with syntax
+    colors for the languages Shade knows (the language comes from the fence)."""
+    runs: list[list] = []  # consecutive lines of one code block
     block = doc.begin()
     while block.isValid():
-        fmt = block.blockFormat()
-        if fmt.hasProperty(QTextFormat.Property.BlockCodeFence) or fmt.nonBreakableLines():
+        if _is_code(block):
+            language = block.blockFormat().stringProperty(QTextFormat.Property.BlockCodeLanguage)
+            if runs and runs[-1][-1].next() == block and runs[-1][0].blockFormat().stringProperty(
+                QTextFormat.Property.BlockCodeLanguage
+            ) == language:
+                runs[-1].append(block)
+            else:
+                runs.append([block])
+        block = block.next()
+    for run in runs:
+        for b in run:
+            fmt = b.blockFormat()
             fmt.setNonBreakableLines(False)
             fmt.setBackground(CODE_BG)
-            cursor = QTextCursor(block)
+            # Space between code blocks that follow each other directly.
+            fmt.setTopMargin(CODE_GAP if b == run[0] else 0)
+            fmt.setBottomMargin(CODE_GAP if b == run[-1] else 0)
+            cursor = QTextCursor(b)
             cursor.setBlockFormat(fmt)
             cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
             char = cursor.charFormat()
@@ -50,7 +72,42 @@ def style_code_blocks(doc: QTextDocument, point_size: int) -> None:
             char.setFontFamilies(CODE_FONTS)
             cursor.mergeCharFormat(char)
             cursor.setBlockCharFormat(char)
-        block = block.next()
+        _highlight(doc, run)
+
+
+def _highlight(doc: QTextDocument, run: list) -> None:
+    language = run[0].blockFormat().stringProperty(QTextFormat.Property.BlockCodeLanguage)
+    lexer = lexer_for(language)
+    if lexer is None:
+        return
+    # Offsets in the joined code -> document positions, line by line.
+    starts, doc_starts, offset = [], [], 0
+    for b in run:
+        starts.append(offset)
+        doc_starts.append(b.position())
+        offset += len(b.text()) + 1
+    code = "\n".join(b.text() for b in run)
+    cursor = QTextCursor(doc)
+    line = 0
+    for start, end, role in spans(code, lexer):
+        fmt = QTextCharFormat()
+        fmt.setForeground(QColor(SYNTAX[role]))
+        if role == "comment":
+            fmt.setFontItalic(True)
+        while line + 1 < len(starts) and starts[line + 1] <= start:
+            line += 1
+        # A token may span lines (multi-line strings): color it piece by piece.
+        i, s = line, start
+        while s < end and i < len(starts):
+            line_end = starts[i] + len(run[i].text())
+            e = min(end, line_end)
+            if e > s:
+                cursor.setPosition(doc_starts[i] + s - starts[i])
+                cursor.setPosition(doc_starts[i] + e - starts[i], QTextCursor.MoveMode.KeepAnchor)
+                cursor.mergeCharFormat(fmt)
+            i += 1
+            if i < len(starts):
+                s = max(s, starts[i])
 
 
 class HintView(QWidget):
