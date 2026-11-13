@@ -51,11 +51,13 @@ def _taskbar_owner() -> QWidget:
 
 
 class MainWindow(CaptureExcluded, QMainWindow):
-    def __init__(self, theme: str = "day", font_size: int = 14) -> None:
+    def __init__(self, theme: str = "day", font_size: int = 14, code_font_size: int | None = None) -> None:
         super().__init__(_taskbar_owner(), WINDOW_FLAGS)
         self.setWindowTitle("Shade")
         self.setWindowIcon(make_icon())
-        self.view = HintView(transcript_lines=None, show_history=True, font_size=font_size)
+        self.view = HintView(
+            transcript_lines=None, show_history=True, font_size=font_size, code_font_size=code_font_size
+        )
         self.setCentralWidget(self.view)
         self.apply_theme(theme)
         self.resize(560, 760)

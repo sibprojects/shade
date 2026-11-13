@@ -36,6 +36,7 @@ from shade.llm.claude_code import find_claude
 from shade.ui.hotkeys import ACTIONS
 
 DEFAULT_DEVICE = "(default)"
+CC_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
 HOTKEY_LABELS = {
     "ask": "Answer last question",
     "screenshot": "Screenshot a region",
@@ -105,7 +106,10 @@ class SettingsDialog(QDialog):
         cf.addRow("Answer model", self.claude_model)
         cf.addRow("Detector model", self.claude_detector)
         cf.addRow("Effort", self.claude_effort)
-        self.cc_model = QLineEdit(settings.cc_model)
+        self.cc_model = QComboBox()
+        self.cc_model.setEditable(True)  # any other model id can be typed in
+        self.cc_model.addItems(CC_MODELS)
+        self.cc_model.setCurrentText(settings.cc_model)
         self.cc_detector = QLineEdit(settings.cc_detector_model)
         self.cc_effort = QComboBox()
         self.cc_effort.addItems(["low", "medium", "high"])
@@ -169,6 +173,14 @@ class SettingsDialog(QDialog):
         self.overlay_font.setRange(8, 40)
         self.overlay_font.setSuffix(" pt")
         self.overlay_font.setValue(settings.overlay_font_size)
+        self.window_code_font = QSpinBox()
+        self.window_code_font.setRange(7, 40)
+        self.window_code_font.setSuffix(" pt")
+        self.window_code_font.setValue(settings.window_code_font_size)
+        self.overlay_code_font = QSpinBox()
+        self.overlay_code_font.setRange(7, 40)
+        self.overlay_code_font.setSuffix(" pt")
+        self.overlay_code_font.setValue(settings.overlay_code_font_size)
         self.opacity = QSlider(Qt.Orientation.Horizontal)
         self.opacity.setRange(0, 100)
         self.opacity.setValue(round(settings.overlay_opacity * 100))
@@ -236,7 +248,9 @@ class SettingsDialog(QDialog):
         dt.addRow("Display", self.display_mode)
         dt.addRow("Window theme", self.window_theme)
         dt.addRow("Window font size", self.window_font)
+        dt.addRow("Window code font size", self.window_code_font)
         dt.addRow("Overlay font size", self.overlay_font)
+        dt.addRow("Overlay code font size", self.overlay_code_font)
         dt.addRow("Overlay background", self.overlay_bg_button)
         dt.addRow("Overlay text", self.overlay_text_button)
         dt.addRow("Overlay background opacity", self.opacity)
@@ -450,7 +464,7 @@ class SettingsDialog(QDialog):
             claude_model=self.claude_model.text().strip(),
             claude_detector_model=self.claude_detector.text().strip(),
             claude_effort=self.claude_effort.currentText(),
-            cc_model=self.cc_model.text().strip(),
+            cc_model=self.cc_model.currentText().strip(),
             cc_detector_model=self.cc_detector.text().strip(),
             cc_effort=self.cc_effort.currentText(),
             cc_path=self.cc_path.text().strip(),
@@ -460,6 +474,8 @@ class SettingsDialog(QDialog):
             window_theme=self.window_theme.currentData(),
             window_font_size=self.window_font.value(),
             overlay_font_size=self.overlay_font.value(),
+            window_code_font_size=self.window_code_font.value(),
+            overlay_code_font_size=self.overlay_code_font.value(),
             overlay_opacity=self.opacity.value() / 100,
             overlay_bg_color=self._overlay_bg,
             overlay_text_color=self._overlay_text,

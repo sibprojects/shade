@@ -73,7 +73,7 @@ and **Apply** changes things without closing the window.
   </tr>
   <tr>
     <td align="center"><img src="docs/images/settings-model-grok-3.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
-    <td align="center"><img src="docs/images/settings-display-3.png" alt="Settings: Display tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-display-4.png" alt="Settings: Display tab" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Model — Grok (OpenAI-compatible)</b></td>
@@ -175,7 +175,7 @@ source keeps working.
 | Provider | Key variable | Images | Notes |
 |---|---|---|---|
 | Claude | `ANTHROPIC_API_KEY` | yes | default; answers on Opus 5.5 (low effort), detection on Haiku 5.5 |
-| Claude Code (subscription) | — (your Claude sign-in) | yes | the installed `claude` CLI in headless mode; Sonnet 5.5 by default |
+| Claude Code (subscription) | — (your Claude sign-in) | yes | the installed `claude` CLI in headless mode; Opus 5.5 by default (Sonnet 5.5 and Haiku 5.5 in the list) |
 | OpenAI | `OPENAI_API_KEY` | yes | |
 | Grok (xAI) | `XAI_API_KEY` | yes | OpenAI-compatible |
 | Groq | `GROQ_API_KEY` | model-dependent | very low latency |
@@ -291,6 +291,9 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   `profiles/example.md`) or use **Browse…**.
 - **Settings:** tray → **Settings…** (provider, models, display, audio
   devices, hotkeys). Saved to `settings.toml` next to the app, without keys.
+- **Code in hints:** shown white on black and wrapped to the width of the
+  window, so there is no sideways scrolling; its font size is set separately
+  (Settings → Display, 2 pt smaller than the text by default).
 - **Sessions:** tray → **Open sessions folder**.
 - **Local model:** run Ollama (`ollama pull qwen2.5vl:7b`) or LM Studio,
   choose **Local model** in Settings and check the base URL

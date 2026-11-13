@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QColor, QFont, QTextCursor, QTextDocument, QTextFormat
 from PySide6.QtWidgets import (
     QLabel,
     QPlainTextEdit,
@@ -26,6 +26,31 @@ from shade.models import (
 from shade.transcript import format_lines
 
 ERROR_MS = 8000
+CODE_BG = QColor("#000000")
+CODE_FG = QColor("#e8e8e8")
+CODE_FONTS = ["Consolas", "Cascadia Mono", "Courier New"]
+
+
+def style_code_blocks(doc: QTextDocument, point_size: int) -> None:
+    """Code blocks from Markdown: white on black, own font size, and wrapped
+    to the width of the view instead of needing a horizontal scrollbar."""
+    block = doc.begin()
+    while block.isValid():
+        fmt = block.blockFormat()
+        if fmt.hasProperty(QTextFormat.Property.BlockCodeFence) or fmt.nonBreakableLines():
+            fmt.setNonBreakableLines(False)
+            fmt.setBackground(CODE_BG)
+            cursor = QTextCursor(block)
+            cursor.setBlockFormat(fmt)
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            char = cursor.charFormat()
+            char.setForeground(CODE_FG)
+            char.setFontPointSize(point_size)
+            char.setFontFixedPitch(True)
+            char.setFontFamilies(CODE_FONTS)
+            cursor.mergeCharFormat(char)
+            cursor.setBlockCharFormat(char)
+        block = block.next()
 
 
 class HintView(QWidget):
@@ -35,6 +60,7 @@ class HintView(QWidget):
         show_history: bool = True,
         font_size: int = 14,
         compact: bool = False,
+        code_font_size: int | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -68,6 +94,8 @@ class HintView(QWidget):
             self._transcript.setMaximumBlockCount(transcript_lines)
 
         self._compact = compact
+        self._code_pt = code_font_size or max(7, font_size - 2)
+        self._current.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
         self._transcript_lines = transcript_lines or 3
         self.set_font_size(font_size)
 
@@ -113,6 +141,11 @@ class HintView(QWidget):
         self._history_view.setFont(small)
         if getattr(self, "_compact", False):
             self._fit_transcript_strip()
+
+    def set_code_font_size(self, pt: int) -> None:
+        self._code_pt = pt
+        self._render_current()
+        self._render_history()
 
     def _fit_transcript_strip(self) -> None:
         height = self._transcript_lines * self._transcript.fontMetrics().lineSpacing() + 14
@@ -164,6 +197,12 @@ class HintView(QWidget):
 
     def _render_current(self) -> None:
         self._current.setMarkdown(self.current_text())
+        style_code_blocks(self._current.document(), self._code_pt)
+
+    def _render_history(self) -> None:
+        self._history_view.setMarkdown("\n\n---\n\n".join(self._history))
+        # History text is 4 pt smaller than the hint; its code follows suit.
+        style_code_blocks(self._history_view.document(), max(7, self._code_pt - 4))
 
     def _update_status(self) -> None:
         bits = []
