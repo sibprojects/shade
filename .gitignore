@@ -5,3 +5,5 @@ __pycache__/
 sessions/
 settings.toml
 .env
+profiles/*
+!profiles/example.md
