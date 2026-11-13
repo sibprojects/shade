@@ -103,13 +103,13 @@ def test_claude_code_provider_settings(qtbot, monkeypatch):
     assert "claude.exe" in d.key_status.text() and "subscription" in d.key_status.text()
     assert "limits" in d.cc_warning.text()
     assert d.cc_auto.isChecked()
-    d.cc_model.setText("claude-opus-5-5")
+    d.cc_model.setCurrentText("claude-sonnet-5-5")
     d.cc_effort.setCurrentText("medium")
     d.cc_path.setText(r"D:\tools\claude.exe")
     d.cc_auto.setChecked(False)
     s = d.result_settings()
     assert (s.provider, s.cc_model, s.cc_effort, s.cc_path, s.cc_auto) == (
-        "claude_code", "claude-opus-5-5", "medium", r"D:\tools\claude.exe", False)
+        "claude_code", "claude-sonnet-5-5", "medium", r"D:\tools\claude.exe", False)
 
 
 def test_claude_code_not_found_is_shown(qtbot, monkeypatch):
@@ -118,3 +118,23 @@ def test_claude_code_not_found_is_shown(qtbot, monkeypatch):
     d = SettingsDialog(Settings(provider="claude_code"), DEVICES)
     qtbot.addWidget(d)
     assert "not found" in d.key_status.text()
+
+
+def test_subscription_model_is_chosen_from_a_list(qtbot):
+    d = SettingsDialog(Settings(provider="claude_code"), DEVICES)
+    qtbot.addWidget(d)
+    items = [d.cc_model.itemText(i) for i in range(d.cc_model.count())]
+    assert items[:3] == ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
+    assert d.cc_model.currentText() == "claude-opus-5-5"
+    d.cc_model.setCurrentText("claude-haiku-5-5")
+    assert d.result_settings().cc_model == "claude-haiku-5-5"
+
+
+def test_code_font_sizes_on_display_tab(qtbot):
+    d = SettingsDialog(Settings(), DEVICES)
+    qtbot.addWidget(d)
+    assert d.window_code_font.value() == 12 and d.overlay_code_font.value() == 10
+    d.window_code_font.setValue(15)
+    d.overlay_code_font.setValue(9)
+    s = d.result_settings()
+    assert (s.window_code_font_size, s.overlay_code_font_size) == (15, 9)

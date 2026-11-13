@@ -129,13 +129,16 @@ class ShadeApp(QObject):
         self.vram_timer.setInterval(10_000)
         self.vram_timer.timeout.connect(self._check_vram)
 
-        self.window = MainWindow(self.settings.window_theme, self.settings.window_font_size)
+        self.window = MainWindow(
+            self.settings.window_theme, self.settings.window_font_size, self.settings.window_code_font_size
+        )
         self.overlay = Overlay(
             self.settings.overlay_opacity,
             self.settings.click_through,
             self.settings.overlay_bg_color,
             self.settings.overlay_text_color,
             self.settings.overlay_font_size,
+            self.settings.overlay_code_font_size,
         )
         for view in (self.window.view, self.overlay.view):
             self.bridge.event.connect(view.handle)
@@ -381,6 +384,8 @@ class ShadeApp(QObject):
         self.window.apply_theme(new.window_theme)
         self.window.view.set_font_size(new.window_font_size)
         self.overlay.view.set_font_size(new.overlay_font_size)
+        self.window.view.set_code_font_size(new.window_code_font_size)
+        self.overlay.view.set_code_font_size(new.overlay_code_font_size)
         self.overlay.apply_style(new.overlay_bg_color, new.overlay_text_color, new.overlay_opacity)
         if new.click_through != self.overlay.click_through:
             self.overlay.set_click_through(new.click_through)

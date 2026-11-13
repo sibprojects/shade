@@ -70,7 +70,7 @@ class Settings:
     claude_effort: str = "low"
     claude_detector_model: str = "claude-haiku-5-5"
     # Claude Code (subscription): the installed `claude` CLI with the user's own sign-in.
-    cc_model: str = "claude-sonnet-5-5"
+    cc_model: str = "claude-opus-5-5"
     cc_detector_model: str = "claude-haiku-5-5"
     cc_effort: str = "low"
     cc_path: str = ""  # empty: find `claude` automatically
@@ -80,6 +80,8 @@ class Settings:
     window_theme: str = "day"  # "day" | "night"
     window_font_size: int = 14
     overlay_font_size: int = 12
+    window_code_font_size: int = 12  # code blocks: 2 pt smaller than the text by default
+    overlay_code_font_size: int = 10
     overlay_opacity: float = 0.85  # background alpha; text stays opaque
     overlay_bg_color: str = "#101218"
     overlay_text_color: str = "#f2f2f2"
@@ -157,6 +159,13 @@ def load_settings(path: Path) -> Settings:
         kwargs["presets"] = _merge_presets(kwargs["presets"])
     if "hotkeys" in kwargs:
         kwargs["hotkeys"] = {**DEFAULT_HOTKEYS, **kwargs["hotkeys"]}
+    # Files from before code font sizes existed: code 2 pt smaller than the text.
+    for text_key, code_key in (
+        ("window_font_size", "window_code_font_size"),
+        ("overlay_font_size", "overlay_code_font_size"),
+    ):
+        if code_key not in kwargs and text_key in kwargs:
+            kwargs[code_key] = max(7, int(kwargs[text_key]) - 2)
     return Settings(**kwargs)
 
 
