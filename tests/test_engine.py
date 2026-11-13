@@ -210,3 +210,18 @@ def test_internal_error_becomes_status(make_engine):
     engine.on_utterance(Utterance("them", "How do you test it?", 90, 92))
     assert engine.wait_idle(5)
     assert Status("Internal error: boom") in events
+
+
+def test_rule_detector_starts_hints_without_asking_the_model(make_engine):
+    from shade.detect import RuleDetector
+
+    class NoDetectProvider(FakeProvider):
+        def detect(self, system, user_text):
+            raise AssertionError("detection must not call the model")
+
+    engine, events, writer = make_engine(NoDetectProvider([["Use", " a cache."]]), detector=RuleDetector())
+    engine.on_utterance(Utterance("them", "Our stack is Go and React.", 85, 88))
+    engine.on_utterance(Utterance("them", "How would you scale the reads?", 90, 92))
+    assert engine.wait_idle(5)
+    started = [e for e in events if isinstance(e, HintStarted)]
+    assert [e.question for e in started] == ["How would you scale the reads?"]

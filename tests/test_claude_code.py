@@ -103,7 +103,7 @@ def test_speech_model_stays_full_with_claude_code():
 
 def test_auto_hints_need_permission_with_claude_code():
     assert auto_allowed(Settings())
-    assert not auto_allowed(Settings(provider="claude_code"))
+    assert not auto_allowed(Settings(provider="claude_code", cc_auto=False))
     assert auto_allowed(Settings(provider="claude_code", cc_auto=True))
 
 

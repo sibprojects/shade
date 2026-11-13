@@ -205,9 +205,30 @@ so they use your subscription instead of API credit. Tools, MCP servers and
 project settings are off, and the system prompt is Shade's own. Each question
 runs in its own process, and the next one is started in advance: measured
 first token 0.64–0.72 s (1.2 s for the very first question). Answers count
-toward your plan's usage limits, so auto hints are off with this provider
-unless you allow them in Settings → Model. Use it for yourself only; see
+toward your plan's usage limits. With this provider, questions are found by
+rules on this PC (no model call), so only the answers use the plan; auto hints
+can be turned off in Settings → Model. Use it for yourself only; see
 [Claude Code legal and compliance](https://code.claude.com/docs/en/legal-and-compliance).
+
+**Question detection by rules** (`src/shade/rules.py`): a question mark, a
+question word followed by a question (`how would…`, not `when I was…`), an
+inverted auxiliary (`do you…`, `could you…`), a task (`tell me…`, `walk me
+through…`, `write…`, `imagine…`) or an indirect question (`I'm curious…`);
+small talk and line checks (`can you hear me?`, `how are you?`) are skipped.
+Measured on a one-hour real call plus 45 interview-style lines (436 lines,
+67 of them questions or tasks):
+
+| Detector | Found | False alarms | Median time |
+|---|---|---|---|
+| Rules | 63 / 67 | 18 | 0 ms |
+| Haiku 5.5 | 65 / 67 | 20 | 840 ms |
+| qwen2.5:7b (Ollama, GPU) | 58 / 67 | 35 | 410 ms |
+| qwen2.5:3b | 63 / 67 | 243 | 265 ms |
+| gemma3:4b | 65 / 67 | 348 | 670 ms |
+
+The rules were tuned on the same lines, so expect somewhat lower numbers on
+new calls. Most remaining false alarms are questions inside a video the other
+side was playing.
 
 ## Hotkeys
 

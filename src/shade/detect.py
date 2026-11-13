@@ -7,6 +7,7 @@ from typing import Callable
 from shade.llm.base import Provider, ProviderError
 from shade.models import Utterance
 from shade.prompt import DETECT_RULES, build_detect_text, parse_detection
+from shade.rules import looks_like_question
 
 
 class Detector:
@@ -34,3 +35,15 @@ class Detector:
                 self.on_error(msg)
             return None
         return parse_detection(reply)
+
+
+class RuleDetector:
+    """Same interface as Detector, but decides by rules: no model, no cost, no delay."""
+
+    def __init__(self, min_words: int = 3) -> None:
+        self.min_words = min_words
+
+    def check(self, latest: Utterance, recent: list[Utterance]) -> str | None:
+        if latest.source != "them" or len(latest.text.split()) < self.min_words:
+            return None
+        return latest.text.strip() if looks_like_question(latest.text) else None
