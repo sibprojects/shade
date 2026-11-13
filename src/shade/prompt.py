@@ -19,6 +19,7 @@ You watch a live call transcript. Decide whether the other side's latest utteran
 Reply with exactly one line: either NONE, or ASK: <the question or task rewritten as one self-contained sentence>."""
 
 SCREENSHOT_TASK = "Solve or answer the task shown in the screenshot."
+PREVIOUS_CHARS = 2000  # per earlier answer sent along with a follow-up
 
 
 def build_system(profile_text: str) -> str:
@@ -29,7 +30,14 @@ def build_user_text(req: HintRequest) -> str:
     question = req.question
     if req.trigger == "screenshot" and not question.strip():
         question = SCREENSHOT_TASK
-    return "Recent conversation:\n" + format_lines(req.context) + "\n\nAnswer this now:\n" + question
+    earlier = ""
+    if req.previous:
+        pairs = "\n\n".join(f"Q: {q}\nA: {a[:PREVIOUS_CHARS]}" for q, a in req.previous)
+        earlier = (
+            "Your earlier answers in this call (the new question may follow up on them; "
+            "build on them instead of starting over):\n" + pairs + "\n\n"
+        )
+    return earlier + "Recent conversation:\n" + format_lines(req.context) + "\n\nAnswer this now:\n" + question
 
 
 def build_detect_text(recent: list[Utterance], latest: Utterance) -> str:

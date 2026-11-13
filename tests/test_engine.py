@@ -225,3 +225,41 @@ def test_rule_detector_starts_hints_without_asking_the_model(make_engine):
     assert engine.wait_idle(5)
     started = [e for e in events if isinstance(e, HintStarted)]
     assert [e.question for e in started] == ["How would you scale the reads?"]
+
+
+def test_follow_up_questions_see_the_earlier_answers(make_engine):
+    provider = FakeProvider([["Use Redis with a TTL."], ["Write-through."]])
+    engine, events, writer = make_engine(provider)
+    engine.on_utterance(Utterance("them", "How would you cache it?", 80, 82))
+    engine.ask_now()
+    assert engine.wait_idle(5)
+    engine.on_utterance(Utterance("them", "And what about writes?", 90, 92))
+    engine.ask_now()
+    assert engine.wait_idle(5)
+    second = provider.user_texts[1]
+    assert "Use Redis with a TTL." in second and "How would you cache it?" in second
+    assert second.index("Use Redis") < second.index("Answer this now")
+
+
+def test_only_the_last_three_answers_are_sent(make_engine):
+    provider = FakeProvider([[f"Answer {i}."] for i in range(5)])
+    engine, events, writer = make_engine(provider)
+    for i in range(5):
+        engine.on_utterance(Utterance("them", f"Question {i}?", 10 * i, 10 * i + 2))
+        engine.ask_now()
+        assert engine.wait_idle(5)
+    last = provider.user_texts[4]
+    assert "Answer 0." not in last and all(f"Answer {i}." in last for i in (1, 2, 3))
+
+
+def test_new_topic_forgets_earlier_answers(make_engine):
+    provider = FakeProvider([["Use Redis."], ["Something else."]])
+    engine, events, writer = make_engine(provider)
+    engine.on_utterance(Utterance("them", "How would you cache it?", 80, 82))
+    engine.ask_now()
+    assert engine.wait_idle(5)
+    engine.new_topic()
+    engine.on_utterance(Utterance("them", "Tell me about yourself.", 90, 92))
+    engine.ask_now()
+    assert engine.wait_idle(5)
+    assert "Use Redis." not in provider.user_texts[1]

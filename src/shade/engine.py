@@ -30,7 +30,7 @@ from shade.models import (
     Utterance,
     UtteranceAdded,
 )
-from shade.prompt import build_system, build_user_text
+from shade.prompt import SCREENSHOT_TASK, build_system, build_user_text
 from shade.session import SessionWriter
 from shade.transcript import Transcript
 
@@ -38,6 +38,7 @@ NO_VISION = "Selected local model does not support images."
 # A queued detection older than this is skipped: its hint would arrive too late.
 STALE_DETECT_S = 10.0
 STOP_JOIN_S = 2.0
+MAX_PREVIOUS = 3  # earlier answers sent along, so follow-up questions build on them
 
 
 @dataclass
@@ -78,6 +79,7 @@ class Engine:
         self._next_id = 0
         self._current: _Run | None = None
         self._runs: list[_Run] = []
+        self._exchanges: list[tuple[str, str]] = []  # finished (question, answer) pairs
         self._detect_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="detect")
 
     # ---- inputs -------------------------------------------------------
@@ -104,6 +106,11 @@ class Engine:
             self.on_event(HintError(hint_id, NO_VISION))
             return
         self._start("screenshot", self.transcript.last_question() or "", png)
+
+    def new_topic(self) -> None:
+        """Forget earlier answers: the next question starts from scratch."""
+        with self._lock:
+            self._exchanges.clear()
 
     def set_auto(self, enabled: bool) -> None:
         self.auto_enabled = enabled
@@ -165,7 +172,8 @@ class Engine:
                 cur.cancel.set()
             self._next_id += 1
             context = self.transcript.window(self.clock(), self.context_seconds)
-            run = _Run(HintRequest(self._next_id, trigger, question, context, image))
+            previous = list(self._exchanges[-MAX_PREVIOUS:])
+            run = _Run(HintRequest(self._next_id, trigger, question, context, image, previous))
             run.thread = threading.Thread(
                 target=self._guard, args=(self._run_hint, run), daemon=True,
                 name=f"hint-{self._next_id}",
@@ -194,6 +202,10 @@ class Engine:
         answer = "".join(parts)
         if run.cancel.is_set():
             answer += " _(cancelled)_"
+        elif answer.strip():
+            with self._lock:
+                self._exchanges.append((req.question or SCREENSHOT_TASK, answer))
+                del self._exchanges[:-MAX_PREVIOUS]
         usage = self.provider.last_usage
         cost = self.cost.add(self.provider.model, usage)
         self.writer.write_hint(req, answer, self.provider.model, usage, cost, self.cost.total)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, Union
 
 Source = Literal["me", "them"]
@@ -24,6 +24,8 @@ class HintRequest:
     question: str
     context: list[Utterance]
     image_png: bytes | None = None
+    # Earlier (question, answer) pairs of this call, oldest first, for follow-ups.
+    previous: list[tuple[str, str]] = field(default_factory=list)
 
 
 @dataclass
