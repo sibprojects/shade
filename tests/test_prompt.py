@@ -49,3 +49,8 @@ def test_build_detect_text():
     assert build_detect_text(recent, latest) == (
         "[00:00] Me: Hello\n\nLatest utterance from Them:\nHow do you test it?"
     )
+
+
+def test_answers_label_code_with_its_language():
+    from shade.prompt import ANSWER_RULES
+    assert "```python" in ANSWER_RULES and "language" in ANSWER_RULES

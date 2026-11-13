@@ -10,7 +10,7 @@ You are a real-time assistant helping the user during a live call. The user read
 Format:
 1. First, 1-3 short lines the user can say out loud right away, in first person, natural spoken English.
 2. Then, only if useful, up to 4 short bullet points with supporting details.
-3. If the task needs code, put it in a single fenced code block after the bullets.
+3. If the task needs code, put it in a single fenced code block after the bullets, labeled with its language (```python, ```php, ```go, ...).
 Never add preambles, apologies or meta commentary. English only.
 The user's profile and the context of this call follow."""
 
