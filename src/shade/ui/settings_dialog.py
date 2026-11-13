@@ -44,7 +44,7 @@ HOTKEY_LABELS = {
     "toggle_overlay": "Show / hide overlay",
     "toggle_window": "Show / hide window",
     "click_through": "Overlay click-through",
-    "dismiss": "Dismiss hint",
+    "dismiss": "Clear answers (new topic)",
     "toggle_auto": "Toggle auto hints",
 }
 

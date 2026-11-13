@@ -240,7 +240,7 @@ side was playing.
 | Show / hide overlay | `Ctrl+Alt+O` |
 | Show / hide window | `Ctrl+Alt+W` |
 | Toggle overlay click-through | `Ctrl+Alt+C` |
-| Dismiss the current hint | `Ctrl+Alt+D` |
+| Clear the answers and start a new topic | `Ctrl+Alt+D` |
 | Toggle auto hints | `Ctrl+Alt+Q` |
 
 All hotkeys are global (they work while another app has focus) and can be
@@ -295,6 +295,11 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   (the language comes from the code fence), wrapped to the width of the
   window, so there is no sideways scrolling; its font size is set separately
   (Settings → Display, 2 pt smaller than the text by default).
+- **Follow-up questions:** answers stack up, newest at the bottom, and the
+  last three go along with the next question, so a follow-up ("and for
+  writes?") builds on them. A new question scrolls to its start once; while
+  it streams, the view stays where you scroll. `Ctrl+Alt+D` clears the answers
+  and starts a new topic.
 - **Sessions:** tray → **Open sessions folder**.
 - **Local model:** run Ollama (`ollama pull qwen2.5vl:7b`) or LM Studio,
   choose **Local model** in Settings and check the base URL

@@ -175,8 +175,12 @@ class ShadeApp(QObject):
             state = "on" if self.overlay.click_through else "off"
             self.bridge.emit_event(Status(f"Click-through {state}"))
         elif action == "dismiss":
+            # New topic: clear the answers on screen and stop sending them along.
             self.window.view.dismiss()
             self.overlay.view.dismiss()
+            if self.session:
+                self.session.engine.new_topic()
+            self.bridge.emit_event(Status("New topic"))
         elif action == "toggle_auto":
             self.set_auto(not self.settings.auto_enabled)
             self.bridge.emit_event(Status(f"Auto hints {'on' if self.settings.auto_enabled else 'off'}"))

@@ -78,7 +78,7 @@ def test_code_font_is_its_own_size(qtbot):
 def test_plain_text_keeps_the_hint_font(qtbot):
     view = HintView(font_size=14, code_font_size=11)
     _show(qtbot, view)
-    first = next(_blocks(view))
+    first = next(b for b in _blocks(view) if b.text().startswith("I'd use a set"))
     assert first.text().startswith("I'd use a set")
     assert first.blockFormat().background().style() == Qt.BrushStyle.NoBrush
 
