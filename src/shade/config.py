@@ -74,7 +74,7 @@ class Settings:
     cc_detector_model: str = "claude-haiku-5-5"
     cc_effort: str = "low"
     cc_path: str = ""  # empty: find `claude` automatically
-    cc_auto: bool = False  # auto hints send many requests and use up subscription limits
+    cc_auto: bool = True  # questions are found by rules, so only answers use the plan
     presets: dict[str, dict] = field(default_factory=lambda: copy.deepcopy(DEFAULT_PRESETS))
     display_mode: str = "window"
     window_theme: str = "day"  # "day" | "night"
@@ -115,6 +115,11 @@ def llm_on_this_pc(s: Settings) -> bool:
 def auto_allowed(s: Settings) -> bool:
     """Auto hints with Claude Code (subscription) only when explicitly allowed."""
     return s.provider != "claude_code" or s.cc_auto
+
+
+def detection_by_rules(s: Settings) -> bool:
+    """With the subscription, questions are found by rules so detection doesn't spend the plan."""
+    return s.provider == "claude_code"
 
 
 def billable_prices(s: Settings) -> dict[str, list[float]]:

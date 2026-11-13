@@ -22,12 +22,13 @@ from shade.config import (
     Settings,
     auto_allowed,
     billable_prices,
+    detection_by_rules,
     load_settings,
     save_settings,
     stt_config,
 )
 from shade.cost import CostMeter
-from shade.detect import Detector
+from shade.detect import Detector, RuleDetector
 from shade.engine import Engine
 from shade.llm.factory import make_provider_or_unavailable
 from shade.models import HintError, Status
@@ -48,7 +49,7 @@ VRAM_WARNING = "GPU memory almost full — hints may lag."
 NEXT_SESSION = "Applies to the next session."
 AUTO_BLOCKED = (
     "Auto hints are off for Claude Code (subscription): ask with the hotkey, "
-    "or allow them in Settings → Model."
+    "or turn them on in Settings → Model."
 )
 
 
@@ -66,7 +67,7 @@ class Session:
         self.writer = SessionWriter(Path(settings.sessions_dir), profile.stem, datetime.now())
         self.engine = Engine(
             provider=provider,
-            detector=Detector(provider, on_error=status),
+            detector=RuleDetector() if detection_by_rules(settings) else Detector(provider, on_error=status),
             transcript=Transcript(),
             writer=self.writer,
             cost=CostMeter(billable_prices(settings)),

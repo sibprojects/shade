@@ -113,12 +113,12 @@ class SettingsDialog(QDialog):
         self.cc_path = QLineEdit(settings.cc_path)
         self.cc_path.setPlaceholderText("found automatically")
         self.cc_path.textChanged.connect(self._update_key_status)
-        self.cc_auto = QCheckBox("Allow auto hints (many requests)")
+        self.cc_auto = QCheckBox("Auto hints (questions found by rules, no AI)")
         self.cc_auto.setChecked(settings.cc_auto)
         self.cc_warning = QLabel(
             "Uses the installed Claude Code with your own Claude sign-in, for your personal use. "
-            "Answers count toward your subscription's usage limits; auto hints send a request "
-            "for every phrase and can use them up mid-call. Anthropic's terms apply."
+            "Answers count toward your subscription's usage limits. Questions are found by rules "
+            "on this PC, so only the answers use the plan. Anthropic's terms apply."
         )
         self.cc_warning.setWordWrap(True)
         self.cc_box = QGroupBox("Claude Code (subscription)")
