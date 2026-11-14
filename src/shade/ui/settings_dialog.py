@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import copy
-import os
 from dataclasses import replace
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QApplication,
     QCheckBox,
     QColorDialog,
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QInputDialog,
@@ -23,6 +22,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QProgressBar,
     QPushButton,
+    QScrollArea,
     QSlider,
     QSpinBox,
     QTabWidget,
@@ -31,12 +31,10 @@ from PySide6.QtWidgets import (
 )
 
 from shade.config import Settings
-from shade.llm.check import check_connection
-from shade.llm.claude_code import find_claude
 from shade.ui.hotkeys import ACTIONS
+from shade.ui.provider_panel import ProviderPanel, ProviderStore
 
 DEFAULT_DEVICE = "(default)"
-CC_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
 HOTKEY_LABELS = {
     "ask": "Answer last question",
     "screenshot": "Screenshot a region",
@@ -84,88 +82,29 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Shade settings")
         self._original = settings
-        self._presets = copy.deepcopy(settings.presets)
-        self._shown_preset: str | None = None
 
-        # --- provider ---
-        self.provider = QComboBox()
-        self.provider.addItem("Claude", "claude")
-        self.provider.addItem("Claude Code (subscription)", "claude_code")
-        for key, p in self._presets.items():
-            self.provider.addItem(p.get("label", key), key)
-        # Answers continue on this one when the main model fails (e.g. usage limit).
-        self.fallback = QComboBox()
-        self.fallback.addItem("(none)", "")
-        for i in range(self.provider.count()):
-            self.fallback.addItem(self.provider.itemText(i), self.provider.itemData(i))
-        self.fallback.setCurrentIndex(max(0, self.fallback.findData(settings.fallback_provider)))
-        self.claude_model = QLineEdit(settings.claude_model)
-        self.claude_detector = QLineEdit(settings.claude_detector_model)
-        self.claude_effort = QComboBox()
-        self.claude_effort.addItems(["low", "medium", "high"])
-        self.claude_effort.setCurrentText(settings.claude_effort)
-        self.base_url = QLineEdit()
-        self.preset_model = QLineEdit()
-        self.preset_detector = QLineEdit()
-        self.preset_images = QCheckBox("Model can read images (screenshots)")
-        self.key_status = QLabel()
+        # --- models: the main one, then the fallback, each with its own settings ---
+        self.store = ProviderStore(settings)
+        self.main_panel = ProviderPanel(self.store, settings.provider)
         add_btn = QPushButton("Add custom preset…")
         add_btn.clicked.connect(self._ask_custom_preset)
-
-        self.claude_box = QGroupBox("Claude")
-        cf = QFormLayout(self.claude_box)
-        cf.addRow("Answer model", self.claude_model)
-        cf.addRow("Detector model", self.claude_detector)
-        cf.addRow("Effort", self.claude_effort)
-        self.cc_model = QComboBox()
-        self.cc_model.setEditable(True)  # any other model id can be typed in
-        self.cc_model.addItems(CC_MODELS)
-        self.cc_model.setCurrentText(settings.cc_model)
-        self.cc_detector = QLineEdit(settings.cc_detector_model)
-        self.cc_effort = QComboBox()
-        self.cc_effort.addItems(["low", "medium", "high"])
-        self.cc_effort.setCurrentText(settings.cc_effort)
-        self.cc_path = QLineEdit(settings.cc_path)
-        self.cc_path.setPlaceholderText("found automatically")
-        self.cc_path.textChanged.connect(self._update_key_status)
-        self.cc_auto = QCheckBox("Auto hints (questions found by rules, no AI)")
-        self.cc_auto.setChecked(settings.cc_auto)
-        self.cc_warning = QLabel(
-            "Uses the installed Claude Code with your own Claude sign-in, for your personal use. "
-            "Answers count toward your subscription's usage limits. Questions are found by rules "
-            "on this PC, so only the answers use the plan. Anthropic's terms apply."
-        )
-        self.cc_warning.setWordWrap(True)
-        self.cc_box = QGroupBox("Claude Code (subscription)")
-        ccf = QFormLayout(self.cc_box)
-        ccf.addRow("Answer model", self.cc_model)
-        ccf.addRow("Detector model", self.cc_detector)
-        ccf.addRow("Effort", self.cc_effort)
-        ccf.addRow("Claude Code path", self.cc_path)
-        ccf.addRow("", self.cc_auto)
-        ccf.addRow(self.cc_warning)
-        self.preset_box = QGroupBox("OpenAI-compatible service")
-        pf = QFormLayout(self.preset_box)
-        pf.addRow("Base URL", self.base_url)
-        pf.addRow("Answer model", self.preset_model)
-        pf.addRow("Detector model", self.preset_detector)
-        pf.addRow("", self.preset_images)
-        self.test_button = QPushButton("Test connection")
-        self.test_button.clicked.connect(self._test_connection)
-        self.test_result = QLabel()
-        self.test_result.setWordWrap(True)
-        self.test_result.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        pf.addRow(self.test_button, self.test_result)
-        self.network_hint = QLabel(
-            "On the other PC: install Ollama, run  setx OLLAMA_HOST 0.0.0.0  and restart Ollama, "
-            "allow TCP port 11434 in its firewall, then put that PC's IP address into Base URL."
-        )
-        self.network_hint.setWordWrap(True)
-        pf.addRow(self.network_hint)
-
-        prov_row = QHBoxLayout()
-        prov_row.addWidget(self.provider, 1)
-        prov_row.addWidget(add_btn)
+        self.main_panel.provider_row.addWidget(add_btn)
+        self.fallback_panel = ProviderPanel(self.store, settings.fallback_provider, allow_none=True)
+        self.fallback_panel.provider_label.setText("If it fails, use")
+        self.main_panel.changed.connect(self._on_main_changed)
+        self.fallback_panel.changed.connect(self._on_fallback_changed)
+        self._on_fallback_changed(self.fallback_panel.key())
+        # The main panel's widgets, under the names the rest of Shade and the tests use.
+        m = self.main_panel
+        self.provider, self.key_status = m.provider, m.key_status
+        self.claude_box, self.cc_box, self.preset_box = m.claude_box, m.cc_box, m.preset_box
+        self.claude_model, self.claude_detector, self.claude_effort = m.claude_model, m.claude_detector, m.claude_effort
+        self.cc_model, self.cc_detector, self.cc_effort = m.cc_model, m.cc_detector, m.cc_effort
+        self.cc_path, self.cc_auto, self.cc_warning = m.cc_path, m.cc_auto, m.cc_warning
+        self.base_url, self.preset_model, self.preset_detector = m.base_url, m.preset_model, m.preset_detector
+        self.preset_images, self.network_hint = m.preset_images, m.network_hint
+        self.test_button, self.test_result = m.test_button, m.test_result
+        self.fallback = self.fallback_panel.provider
 
         # --- display / behavior ---
         self.display_mode = QComboBox()
@@ -245,17 +184,21 @@ class SettingsDialog(QDialog):
         self.hotkey_edits = {a: QLineEdit(settings.hotkeys.get(a, "")) for a in ACTIONS}
 
         # --- tabs ---
-        model_tab = QWidget()
-        mt = QVBoxLayout(model_tab)
-        form = QFormLayout()
-        form.addRow("Provider", prov_row)
-        form.addRow("", self.key_status)
-        form.addRow("If it fails, use", self.fallback)
-        mt.addLayout(form)
-        mt.addWidget(self.claude_box)
-        mt.addWidget(self.cc_box)
-        mt.addWidget(self.preset_box)
+        main_group = QGroupBox("Main model")
+        QVBoxLayout(main_group).addWidget(self.main_panel)
+        fallback_group = QGroupBox("Fallback model")
+        fb = QVBoxLayout(fallback_group)
+        fb.addWidget(QLabel("Answers when the main model fails (usage limit, outage, missing key)."))
+        fb.addWidget(self.fallback_panel)
+        model_inner = QWidget()
+        mt = QVBoxLayout(model_inner)
+        mt.addWidget(main_group)
+        mt.addWidget(fallback_group)
         mt.addStretch(1)
+        model_tab = QScrollArea()  # two providers' settings can be taller than the dialog
+        model_tab.setWidgetResizable(True)
+        model_tab.setFrameShape(QFrame.Shape.NoFrame)
+        model_tab.setWidget(model_inner)
 
         display_tab = QWidget()
         dt = QFormLayout(display_tab)
@@ -316,10 +259,6 @@ class SettingsDialog(QDialog):
         if start_meter:
             self.mic.currentIndexChanged.connect(self._restart_meter)
             self._restart_meter()
-
-        self.provider.currentIndexChanged.connect(self._on_provider_changed)
-        self.provider.setCurrentIndex(max(0, self.provider.findData(settings.provider)))
-        self._on_provider_changed()
 
     def _apply(self) -> None:
         """Apply without closing: later Apply/OK compare against these values."""
@@ -384,69 +323,16 @@ class SettingsDialog(QDialog):
         if chosen.isValid():
             setter(chosen.name())
 
-    # ---- presets ----------------------------------------------------------
+    # ---- models -----------------------------------------------------------
 
-    def _store_shown_preset(self) -> None:
-        key = self._shown_preset
-        if key is None:
-            return
-        p = self._presets[key]
-        p["base_url"] = self.base_url.text().strip()
-        p["model"] = self.preset_model.text().strip()
-        p["detector_model"] = self.preset_detector.text().strip()
-        p["supports_images"] = self.preset_images.isChecked()
+    def _on_main_changed(self, key: str) -> None:
+        # The same provider can't be its own fallback.
+        if key and key == self.fallback_panel.key():
+            self.fallback_panel.set_key("")
 
-    def _on_provider_changed(self, *_):
-        self._store_shown_preset()
-        key = self.provider.currentData()
-        is_claude = key == "claude"
-        is_cc = key == "claude_code"
-        self.claude_box.setVisible(is_claude)
-        self.cc_box.setVisible(is_cc)
-        self.preset_box.setVisible(not is_claude and not is_cc)
-        if is_claude or is_cc:
-            self._shown_preset = None
-            env = "ANTHROPIC_API_KEY"
-        else:
-            p = self._presets[key]
-            self._shown_preset = key
-            self.base_url.setText(p.get("base_url", ""))
-            self.preset_model.setText(p.get("model", ""))
-            self.preset_detector.setText(p.get("detector_model", ""))
-            self.preset_images.setChecked(bool(p.get("supports_images", True)))
-            env = p.get("key_env") or ""
-        self.network_hint.setVisible(key == "network")
-        self.test_result.clear()
-        self._update_key_status()
-
-    def _update_key_status(self, *_) -> None:
-        key = self.provider.currentData()
-        if key == "claude_code":
-            exe = find_claude(self.cc_path.text().strip())
-            self.key_status.setText(
-                f"Uses your Claude subscription · {exe}" if exe else "Claude Code not found: install it or set its path"
-            )
-            return
-        env = "ANTHROPIC_API_KEY" if key == "claude" else (self._presets.get(key, {}).get("key_env") or "")
-        if not env:
-            self.key_status.setText("No API key needed")
-        elif os.environ.get(env):
-            self.key_status.setText(f"{env} is set")
-        else:
-            self.key_status.setText(f"{env} is not set")
-
-    def _test_connection(self) -> None:
-        env = (self._presets.get(self._shown_preset or "", {}).get("key_env") or "")
-        key = os.environ.get(env, "") if env else "local"
-        self.test_result.setText("Checking…")
-        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-        try:
-            _, message = check_connection(
-                self.base_url.text().strip(), key, self.preset_model.text().strip(), timeout=5
-            )
-        finally:
-            QApplication.restoreOverrideCursor()
-        self.test_result.setText(message)
+    def _on_fallback_changed(self, key: str) -> None:
+        if key and key == self.main_panel.key():
+            self.fallback_panel.set_key("")
 
     def _ask_custom_preset(self) -> None:
         name, ok = QInputDialog.getText(self, "Custom preset", "Preset name (letters, digits, dashes):")
@@ -455,8 +341,8 @@ class SettingsDialog(QDialog):
 
     def add_custom_preset(self, name: str) -> None:
         key = name.lower().replace(" ", "-")
-        if key not in self._presets:
-            self._presets[key] = {
+        if key not in self.store.presets:
+            self.store.presets[key] = {
                 "label": name,
                 "base_url": "http://localhost:8000/v1",
                 "model": "",
@@ -464,29 +350,23 @@ class SettingsDialog(QDialog):
                 "key_env": "",
                 "supports_images": False,
             }
-            self.provider.addItem(name, key)
-            self.fallback.addItem(name, key)
-        self.provider.setCurrentIndex(self.provider.findData(key))
+            self.main_panel.add_choice(name, key)
+            self.fallback_panel.add_choice(name, key)
+        self.main_panel.set_key(key)
 
     # ---- result -------------------------------------------------------------
 
     def result_settings(self) -> Settings:
-        self._store_shown_preset()
+        self.main_panel.store_shown()
+        self.fallback_panel.store_shown()
         hotkeys = dict(self._original.hotkeys)
         hotkeys.update({a: e.text().strip() for a, e in self.hotkey_edits.items()})
         return replace(
             self._original,
-            provider=self.provider.currentData(),
-            claude_model=self.claude_model.text().strip(),
-            claude_detector_model=self.claude_detector.text().strip(),
-            claude_effort=self.claude_effort.currentText(),
-            cc_model=self.cc_model.currentText().strip(),
-            cc_detector_model=self.cc_detector.text().strip(),
-            cc_effort=self.cc_effort.currentText(),
-            cc_path=self.cc_path.text().strip(),
-            cc_auto=self.cc_auto.isChecked(),
-            presets=copy.deepcopy(self._presets),
-            fallback_provider=self.fallback.currentData(),
+            **self.store.values,
+            provider=self.main_panel.key(),
+            presets=copy.deepcopy(self.store.presets),
+            fallback_provider=self.fallback_panel.key(),
             display_mode=self.display_mode.currentData(),
             window_theme=self.window_theme.currentData(),
             window_font_size=self.window_font.value(),

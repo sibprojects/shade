@@ -81,7 +81,7 @@ def test_network_variant_shows_setup_hint(qtbot):
 
 
 def test_test_connection_uses_the_fields_as_typed(qtbot, monkeypatch):
-    import shade.ui.settings_dialog as sd
+    import shade.ui.provider_panel as sd
     calls = []
     monkeypatch.setattr(sd, "check_connection", lambda url, key, model, **kw: (calls.append((url, key, model)) or (True, "Connected. Available models: m1")))
     d = SettingsDialog(Settings(provider="network"), DEVICES)
@@ -94,7 +94,7 @@ def test_test_connection_uses_the_fields_as_typed(qtbot, monkeypatch):
 
 
 def test_claude_code_provider_settings(qtbot, monkeypatch):
-    import shade.ui.settings_dialog as sd
+    import shade.ui.provider_panel as sd
     monkeypatch.setattr(sd, "find_claude", lambda path="": r"C:\x\claude.exe")
     d = SettingsDialog(Settings(provider="claude_code"), DEVICES)
     qtbot.addWidget(d)
@@ -113,7 +113,7 @@ def test_claude_code_provider_settings(qtbot, monkeypatch):
 
 
 def test_claude_code_not_found_is_shown(qtbot, monkeypatch):
-    import shade.ui.settings_dialog as sd
+    import shade.ui.provider_panel as sd
     monkeypatch.setattr(sd, "find_claude", lambda path="": None)
     d = SettingsDialog(Settings(provider="claude_code"), DEVICES)
     qtbot.addWidget(d)
