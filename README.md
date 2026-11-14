@@ -300,6 +300,12 @@ copy .env.example .env   # then put your key(s) into .env
 uv run python -m shade
 ```
 
+After setup, start Shade with **`shade.bat`** (double-click it, or make a
+desktop shortcut to it): it runs in the tray without a console window, and
+whatever started it doesn't wait. Quit from the tray menu. After `git pull`,
+run `uv sync` once. If the tray icon doesn't appear, run
+`uv run python -m shade` to see the error.
+
 API keys go into `.env` in the project folder (it is in `.gitignore`), e.g.
 `ANTHROPIC_API_KEY=sk-ant-...`. Variables already set in the environment
 take precedence over the file.
