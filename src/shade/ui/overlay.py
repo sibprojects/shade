@@ -1,7 +1,8 @@
 """Semi-transparent always-on-top overlay mode.
 
 Frameless, so it draws its own thin frame: drag an edge or corner to resize,
-drag the status line at the bottom to move. Position and size are remembered.
+drag the status line at the bottom, or anywhere with Ctrl held, to move.
+Position, size and the hint/transcript border are remembered.
 """
 
 from __future__ import annotations
@@ -89,8 +90,11 @@ class Overlay(CaptureExcluded, QWidget):
         layout.setContentsMargins(RESIZE_MARGIN, RESIZE_MARGIN, RESIZE_MARGIN, RESIZE_MARGIN)
         layout.addWidget(self.view)
         # The status line doubles as the title bar: drag it to move the overlay.
-        self.view._status.installEventFilter(self)
+        # With Ctrl held, a drag anywhere moves it.
+        for child in self.findChildren(QWidget):
+            child.installEventFilter(self)
         self.view._status.setCursor(Qt.CursorShape.SizeAllCursor)
+        self.view.remember_split("overlay/split")
 
         state = ui_state()
         size = state.value("overlay/size")
@@ -145,14 +149,18 @@ class Overlay(CaptureExcluded, QWidget):
         elif handle is not None:
             handle.startSystemMove()
 
+    def _start_move(self) -> None:
+        handle = self.windowHandle()
+        if handle is not None:
+            handle.startSystemMove()
+
     def eventFilter(self, obj, event):  # noqa: N802
         if (
-            obj is self.view._status
-            and event.type() == QEvent.Type.MouseButtonPress
+            event.type() == QEvent.Type.MouseButtonPress
             and event.button() == Qt.MouseButton.LeftButton
-            and self.windowHandle() is not None
+            and (obj is self.view._status or event.modifiers() & Qt.KeyboardModifier.ControlModifier)
         ):
-            self.windowHandle().startSystemMove()
+            self._start_move()
             return True
         return super().eventFilter(obj, event)
 

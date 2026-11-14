@@ -59,6 +59,7 @@ class MainWindow(CaptureExcluded, QMainWindow):
             transcript_lines=None, show_history=True, font_size=font_size, code_font_size=code_font_size
         )
         self.setCentralWidget(self.view)
+        self.view.remember_split("main_window/split")
         self.apply_theme(theme)
         self.resize(560, 760)
         geometry = ui_state().value("main_window/geometry")

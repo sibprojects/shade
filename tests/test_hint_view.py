@@ -61,13 +61,17 @@ def test_window_mode_has_transcript_and_history_tabs(qtbot):
     assert [v.tabs.tabText(i) for i in range(v.tabs.count())] == ["Transcript", "History"]
 
 
-def test_compact_mode_has_no_history_and_fixed_transcript(qtbot):
+def test_compact_mode_has_no_history_and_a_resizable_transcript_strip(qtbot):
     v = HintView(transcript_lines=3, compact=True)
     qtbot.addWidget(v)
+    v.resize(400, 500)
+    v.show()
+    qtbot.waitExposed(v)
     assert v.tabs is None
     line = v._transcript.fontMetrics().lineSpacing()
-    assert v._transcript.maximumHeight() <= 3 * line + 20
-    assert v._transcript.minimumHeight() == v._transcript.maximumHeight()
+    assert abs(v._transcript.height() - (3 * line + 14)) <= 4  # starts at about three lines
+    assert v._transcript.minimumHeight() <= line + 20  # can shrink to one line
+    assert v._transcript.maximumHeight() > 3 * line + 20  # and grow
 
 
 def test_status_line_is_at_the_bottom_in_window_mode(qtbot):

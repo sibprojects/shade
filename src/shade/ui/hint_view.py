@@ -28,6 +28,7 @@ from shade.models import (
 from shade.engine import QUICK_ACTIONS
 from shade.transcript import format_lines
 from shade.ui.syntax import SYNTAX, lexer_for, spans
+from shade.ui.ui_state import ui_state
 
 # Buttons in the window, between the answers and the transcript/history tabs.
 ACTION_BUTTONS = [(name, label) for name, (label, _, _) in QUICK_ACTIONS.items()] + [("recap", "Recap")]
@@ -187,13 +188,20 @@ class HintView(QWidget):
         self.action_buttons: list[QPushButton] = []
         if compact:
             layout.setSpacing(2)  # overlay: blocks close together
-            # Overlay: the hint takes all the space; a fixed strip of the last
-            # few transcript lines below it; no history.
+            # Overlay: the hint takes most of the space; a strip of the last
+            # transcript lines below it (drag the border to resize); no history.
             self._transcript.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self._transcript.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            self.split = QSplitter(Qt.Orientation.Vertical)
+            self.split.setHandleWidth(2)
+            self.split.setChildrenCollapsible(False)
+            self.split.addWidget(self._current)
+            self.split.addWidget(self._transcript)
+            self.split.setStretchFactor(0, 1)
+            self.split.setStretchFactor(1, 0)
             self._fit_transcript_strip()
-            layout.addWidget(self._current, 1)
-            layout.addWidget(self._transcript)
+            self.split.setSizes([1000, self._strip_height()])
+            layout.addWidget(self.split, 1)
             layout.addWidget(self._status)  # trigger · model · cost, at the bottom
         else:
             # Window: current hint on top; transcript and history as tabs below.
@@ -219,12 +227,12 @@ class HintView(QWidget):
             lower_layout.setSpacing(0)
             lower_layout.addWidget(self.action_bar)
             lower_layout.addWidget(self.tabs, 1)
-            split = QSplitter(Qt.Orientation.Vertical)
-            split.addWidget(self._current)
-            split.addWidget(lower)
-            split.setStretchFactor(0, 3)
-            split.setStretchFactor(1, 2)
-            layout.addWidget(split, 1)
+            self.split = QSplitter(Qt.Orientation.Vertical)
+            self.split.addWidget(self._current)
+            self.split.addWidget(lower)
+            self.split.setStretchFactor(0, 3)
+            self.split.setStretchFactor(1, 2)
+            layout.addWidget(self.split, 1)
             layout.addWidget(self._status)  # trigger · model · cost, at the bottom
 
     # ---- fonts ---------------------------------------------------------
@@ -246,9 +254,19 @@ class HintView(QWidget):
         self._render_current()
         self._render_history()
 
+    def _strip_height(self, lines: int | None = None) -> int:
+        return (lines or self._transcript_lines) * self._transcript.fontMetrics().lineSpacing() + 14
+
     def _fit_transcript_strip(self) -> None:
-        height = self._transcript_lines * self._transcript.fontMetrics().lineSpacing() + 14
-        self._transcript.setFixedHeight(height)
+        # At least one transcript line stays visible; the border above it can be dragged.
+        self._transcript.setMinimumHeight(self._strip_height(1))
+
+    def remember_split(self, key: str) -> None:
+        """Restore the hint/transcript border from `key` and save it whenever it moves."""
+        saved = ui_state().value(key)
+        if saved is not None:
+            self.split.restoreState(saved)
+        self.split.splitterMoved.connect(lambda *_: ui_state().setValue(key, self.split.saveState()))
 
     # ---- event handling ----------------------------------------------
 
