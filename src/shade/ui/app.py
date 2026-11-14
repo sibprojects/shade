@@ -29,7 +29,7 @@ from shade.config import (
 )
 from shade.cost import CostMeter
 from shade.detect import Detector, RuleDetector
-from shade.engine import Engine
+from shade.engine import QUICK_ACTIONS, Engine
 from shade.llm.factory import make_provider_or_unavailable
 from shade.models import HintError, Status
 from shade.session import SessionWriter
@@ -190,6 +190,8 @@ class ShadeApp(QObject):
             self.session.engine.ask_now()
         elif action == "screenshot":
             self.region.start()
+        elif action in QUICK_ACTIONS:
+            self.session.engine.quick_action(action)
 
     def _on_screenshot(self, png: bytes) -> None:
         if self.session:
@@ -233,6 +235,9 @@ class ShadeApp(QObject):
         self.start_menu.aboutToShow.connect(self._fill_profiles)
         self.stop_action = menu.addAction("Stop session", self.stop_session)
         self.stop_action.setEnabled(False)
+        actions_menu = menu.addMenu("Quick actions")
+        for name, (label, _, _) in QUICK_ACTIONS.items():
+            actions_menu.addAction(label, lambda n=name: self.on_hotkey(n))
         menu.addSeparator()
         self.auto_action = menu.addAction("Auto hints")
         self.auto_action.setCheckable(True)

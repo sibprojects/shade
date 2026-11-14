@@ -54,6 +54,10 @@ DEFAULT_HOTKEYS = {
     "click_through": "<ctrl>+<alt>+c",
     "dismiss": "<ctrl>+<alt>+d",
     "toggle_auto": "<ctrl>+<alt>+q",
+    "shorter": "<ctrl>+<alt>+1",
+    "more": "<ctrl>+<alt>+2",
+    "code": "<ctrl>+<alt>+3",
+    "followups": "<ctrl>+<alt>+4",
 }
 
 DEFAULT_PRICES = {

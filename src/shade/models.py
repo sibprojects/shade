@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Union
 
 Source = Literal["me", "them"]
-Trigger = Literal["auto", "hotkey", "screenshot"]
+Trigger = Literal["auto", "hotkey", "screenshot", "action"]
 
 
 @dataclass(frozen=True)
@@ -26,6 +26,7 @@ class HintRequest:
     image_png: bytes | None = None
     # Earlier (question, answer) pairs of this call, oldest first, for follow-ups.
     previous: list[tuple[str, str]] = field(default_factory=list)
+    label: str = ""  # shown instead of the question (quick actions)
 
 
 @dataclass

@@ -40,6 +40,33 @@ STALE_DETECT_S = 10.0
 STOP_JOIN_S = 2.0
 MAX_PREVIOUS = 3  # earlier answers sent along, so follow-up questions build on them
 
+# Quick actions: name -> (label shown, instruction to the model, needs a previous answer).
+QUICK_ACTIONS: dict[str, tuple[str, str, bool]] = {
+    "shorter": (
+        "Shorter",
+        "Rewrite your last answer much shorter: 1-2 sentences I can say right away. "
+        "No bullet points, no code.",
+        True,
+    ),
+    "more": (
+        "More detail",
+        "Expand your last answer: go one level deeper and add a concrete example, "
+        "from my experience if it fits. Keep it easy to say out loud.",
+        True,
+    ),
+    "code": (
+        "Code example",
+        "Show a short code example for your last answer, with one line on what it shows.",
+        True,
+    ),
+    "followups": (
+        "Questions to ask",
+        "Suggest 3 short, smart questions I can ask the other side now, based on the conversation. "
+        "One line each.",
+        False,
+    ),
+}
+
 
 @dataclass
 class _Run:
@@ -107,6 +134,19 @@ class Engine:
             return
         self._start("screenshot", self.transcript.last_question() or "", png)
 
+    def quick_action(self, name: str) -> None:
+        """Work on the last answer (shorter, more detail, code) or suggest questions to ask."""
+        action = QUICK_ACTIONS.get(name)
+        if action is None:
+            return
+        label, instruction, needs_answer = action
+        with self._lock:
+            has_answer = bool(self._exchanges)
+        if needs_answer and not has_answer:
+            self.on_event(Status("No answer yet."))
+            return
+        self._start("action", instruction, None, label=label)
+
     def new_topic(self) -> None:
         """Forget earlier answers: the next question starts from scratch."""
         with self._lock:
@@ -161,7 +201,7 @@ class Engine:
         if question and self.auto_enabled:
             self._start("auto", question, None)
 
-    def _start(self, trigger: Trigger, question: str, image: bytes | None) -> None:
+    def _start(self, trigger: Trigger, question: str, image: bytes | None, label: str = "") -> None:
         with self._lock:
             if self._stopped:
                 return
@@ -173,14 +213,14 @@ class Engine:
             self._next_id += 1
             context = self.transcript.window(self.clock(), self.context_seconds)
             previous = list(self._exchanges[-MAX_PREVIOUS:])
-            run = _Run(HintRequest(self._next_id, trigger, question, context, image, previous))
+            run = _Run(HintRequest(self._next_id, trigger, question, context, image, previous, label))
             run.thread = threading.Thread(
                 target=self._guard, args=(self._run_hint, run), daemon=True,
                 name=f"hint-{self._next_id}",
             )
             self._current = run
             self._runs = [r for r in self._runs if r.alive()] + [run]
-            self.on_event(HintStarted(run.req.id, trigger, question))
+            self.on_event(HintStarted(run.req.id, trigger, label or question))
             run.thread.start()
 
     def _run_hint(self, run: _Run) -> None:
