@@ -93,6 +93,7 @@ class Settings:
     overlay_text_color: str = "#f2f2f2"
     click_through: bool = False
     auto_enabled: bool = True
+    auto_notes: bool = True  # write call notes (notes.md) when a session stops
     mic_device: str | None = None
     loopback_device: str | None = None
     mic_gain: float = 1.0  # x1..x20, applied before speech detection

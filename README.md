@@ -123,7 +123,8 @@ and **Apply** changes things without closing the window.
   `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`, so it is not in your
   shared screen or in recordings.
 - **Session notes:** `sessions/<date>_<profile>/` gets `transcript.md`,
-  `hints.md` (question, answer, model, tokens, cost) and screenshots. Files
+  `hints.md` (question, answer, model, tokens, cost), screenshots and, after
+  the call, `notes.md`. Files
   are appended and flushed on every line, so a crash loses nothing.
 - **Cost:** a running per-session cost counter is shown in the UI and
   written next to every hint. There is no hard cap.
@@ -329,6 +330,13 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
 - **What did I miss** (`Ctrl+Alt+R`): 3–5 bullets on the last 5 minutes of the
   call (topics, questions to you and whether you answered, tasks) and what to
   say next. A recap is not sent along with later questions.
+- **Call notes:** when a session stops, the answer model writes `notes.md`
+  into the session folder: a summary, every question with what you answered
+  and how well (with a better answer where it was partial or missed), things
+  to do, and a short follow-up email. A tray message says when it's ready;
+  click it to open the notes. About 10 s for a one-hour call with Claude Code.
+  Turn it off in Settings → Display, or run it later with tray → **Call notes
+  for last session**.
 - **Sessions:** tray → **Open sessions folder**.
 - **Local model:** run Ollama (`ollama pull qwen2.5vl:7b`) or LM Studio,
   choose **Local model** in Settings and check the base URL

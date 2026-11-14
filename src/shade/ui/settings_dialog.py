@@ -209,6 +209,8 @@ class SettingsDialog(QDialog):
         self.click_through.setChecked(settings.click_through)
         self.auto = QCheckBox("Answer detected questions automatically")
         self.auto.setChecked(settings.auto_enabled)
+        self.auto_notes = QCheckBox("Write call notes when a session stops")
+        self.auto_notes.setChecked(settings.auto_notes)
 
         # --- audio ---
         self.mic = _device_combo(devices.get("mic", []), settings.mic_device)
@@ -268,6 +270,7 @@ class SettingsDialog(QDialog):
         dt.addRow("Overlay background opacity", self.opacity)
         dt.addRow("", self.click_through)
         dt.addRow("", self.auto)
+        dt.addRow("", self.auto_notes)
 
         audio_tab = QWidget()
         at = QFormLayout(audio_tab)
@@ -495,6 +498,7 @@ class SettingsDialog(QDialog):
             overlay_text_color=self._overlay_text,
             click_through=self.click_through.isChecked(),
             auto_enabled=self.auto.isChecked(),
+            auto_notes=self.auto_notes.isChecked(),
             mic_device=self.mic.currentData(),
             mic_gain=self._gain(),
             loopback_device=self.loopback.currentData(),
