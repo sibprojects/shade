@@ -14,7 +14,7 @@ from pynput.keyboard import Key, KeyCode
 
 ACTIONS = (
     "ask", "screenshot", "toggle_view", "toggle_overlay", "toggle_window", "click_through", "dismiss",
-    "toggle_auto",
+    "toggle_auto", "shorter", "more", "code", "followups",
 )
 
 _MODIFIERS = {

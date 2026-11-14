@@ -46,6 +46,10 @@ HOTKEY_LABELS = {
     "click_through": "Overlay click-through",
     "dismiss": "Clear answers (new topic)",
     "toggle_auto": "Toggle auto hints",
+    "shorter": "Last answer: shorter",
+    "more": "Last answer: more detail",
+    "code": "Last answer: code example",
+    "followups": "Questions to ask them",
 }
 
 

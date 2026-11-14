@@ -242,6 +242,10 @@ side was playing.
 | Toggle overlay click-through | `Ctrl+Alt+C` |
 | Clear the answers and start a new topic | `Ctrl+Alt+D` |
 | Toggle auto hints | `Ctrl+Alt+Q` |
+| Last answer: shorter | `Ctrl+Alt+1` |
+| Last answer: more detail | `Ctrl+Alt+2` |
+| Last answer: code example | `Ctrl+Alt+3` |
+| Questions to ask them | `Ctrl+Alt+4` |
 
 All hotkeys are global (they work while another app has focus) and can be
 changed in Settings. In the screenshot selector, Esc or a right click cancels.
@@ -300,6 +304,10 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   writes?") builds on them. A new question scrolls to its start once; while
   it streams, the view stays where you scroll. `Ctrl+Alt+D` clears the answers
   and starts a new topic.
+- **Quick actions** (hotkeys or tray → **Quick actions**): make the last
+  answer shorter (1–2 sentences to say right away), add more detail, show a
+  code example, or suggest three questions to ask the other side. The result
+  becomes the last answer, so actions can follow each other.
 - **Sessions:** tray → **Open sessions folder**.
 - **Local model:** run Ollama (`ollama pull qwen2.5vl:7b`) or LM Studio,
   choose **Local model** in Settings and check the base URL
