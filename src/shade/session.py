@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from shade.models import HintRequest, Usage, Utterance
-from shade.transcript import format_lines
+from shade.transcript import joins, line_start
 
 
 def slug(name: str) -> str:
@@ -27,6 +27,7 @@ class SessionWriter:
         self.dir = Path(root) / f"{started:%Y-%m-%d_%H-%M}_{slug(profile_name)}"
         self.dir.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
+        self._last_source: str | None = None
         when = f"{started:%Y-%m-%d %H:%M}"
         self._transcript = open(self.dir / "transcript.md", "a", encoding="utf-8")
         self._hints = open(self.dir / "hints.md", "a", encoding="utf-8")
@@ -41,7 +42,18 @@ class SessionWriter:
             f.flush()
 
     def write_utterance(self, u: Utterance) -> None:
-        self._write(self._transcript, format_lines([u]) + "\n")
+        # Same speaker: the phrase joins the current line. The line break comes
+        # only when the speaker changes, so the file stays append-only.
+        with self._lock:  # speech and typed notes arrive on different threads
+            if self._transcript.closed:
+                return
+            if joins(self._last_source, u):
+                text = " " + u.text
+            else:
+                text = ("\n" if self._last_source else "") + line_start(u)
+            self._last_source = u.source
+            self._transcript.write(text)
+            self._transcript.flush()
 
     def _heading(self, req: HintRequest, model: str | None) -> str:
         head = f"## [{_stamp(req)}] #{req.id} ({req.trigger})"
@@ -74,5 +86,7 @@ class SessionWriter:
 
     def close(self) -> None:
         with self._lock:
+            if self._last_source and not self._transcript.closed:
+                self._transcript.write("\n")  # end the last line
             self._transcript.close()
             self._hints.close()

@@ -25,8 +25,10 @@ def test_creates_dir_and_headers(tmp_path):
 def test_utterance_appended_and_flushed(tmp_path):
     w = _writer(tmp_path)
     w.write_utterance(Utterance("them", "Why Python?", 65.0, 66.0))
-    assert "[01:05] Them: Why Python?\n" in (w.dir / "transcript.md").read_text(encoding="utf-8")
+    # Flushed right away; the line ends when the speaker changes or the session closes.
+    assert (w.dir / "transcript.md").read_text(encoding="utf-8").endswith("[01:05] Them: Why Python?")
     w.close()
+    assert (w.dir / "transcript.md").read_text(encoding="utf-8").endswith("[01:05] Them: Why Python?\n")
 
 
 def test_hint_with_image_saves_png_and_link(tmp_path):
