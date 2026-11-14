@@ -7,6 +7,7 @@ from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocu
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPlainTextEdit,
     QPushButton,
     QSplitter,
@@ -124,8 +125,29 @@ def _entry_markdown(question: str, answer: str) -> str:
     return f"**{HEADER_PREFIX}** {q}\n\n{answer}"
 
 
+class NoteEdit(QLineEdit):
+    """One line to type a note to the AI: Enter asks now, Ctrl+Enter only adds it."""
+
+    submitted = Signal(str, bool)  # text, ask now
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setPlaceholderText("Note to AI — Enter: ask now · Ctrl+Enter: just add to the context")
+
+    def keyPressEvent(self, e):  # noqa: N802
+        if e.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            text = self.text().strip()
+            if text:
+                ask = not (e.modifiers() & Qt.KeyboardModifier.ControlModifier)
+                self.clear()
+                self.submitted.emit(text, ask)
+            return
+        super().keyPressEvent(e)
+
+
 class HintView(QWidget):
     action_requested = Signal(str)  # quick action or "recap", from the buttons
+    note_submitted = Signal(str, bool)  # typed note, ask now
 
     def __init__(
         self,
@@ -167,6 +189,8 @@ class HintView(QWidget):
         self._current.verticalScrollBar().valueChanged.connect(self._on_user_scroll)
 
         self._history_view = QTextBrowser()
+        self.note = NoteEdit()
+        self.note.submitted.connect(self.note_submitted)
 
         self._transcript = QPlainTextEdit()
         self._transcript.setReadOnly(True)
@@ -202,6 +226,7 @@ class HintView(QWidget):
             self._fit_transcript_strip()
             self.split.setSizes([1000, self._strip_height()])
             layout.addWidget(self.split, 1)
+            layout.addWidget(self.note)
             layout.addWidget(self._status)  # trigger · model · cost, at the bottom
         else:
             # Window: current hint on top; transcript and history as tabs below.
@@ -225,6 +250,8 @@ class HintView(QWidget):
             lower_layout = QVBoxLayout(lower)
             lower_layout.setContentsMargins(0, 0, 0, 0)
             lower_layout.setSpacing(0)
+            lower_layout.addSpacing(4)
+            lower_layout.addWidget(self.note)
             lower_layout.addWidget(self.action_bar)
             lower_layout.addWidget(self.tabs, 1)
             self.split = QSplitter(Qt.Orientation.Vertical)

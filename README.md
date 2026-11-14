@@ -333,6 +333,11 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   answer shorter (1–2 sentences to say right away), add more detail, show a
   code example, or suggest three questions to ask the other side. The result
   becomes the last answer, so actions can follow each other.
+- **Notes to the AI:** type into the *Note to AI* line (window and overlay).
+  **Enter** adds the note to the transcript and gets an answer right away
+  (e.g. "they want it in Go"); **Ctrl+Enter** only adds it, so later answers
+  follow it (e.g. "the interviewer is the CTO"). Notes are shown as *Note* in
+  the transcript and saved with it.
 - **What did I miss** (`Ctrl+Alt+R`): 3–5 bullets on the last 5 minutes of the
   call (topics, questions to you and whether you answered, tasks) and what to
   say next. A recap is not sent along with later questions.

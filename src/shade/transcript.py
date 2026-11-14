@@ -7,7 +7,7 @@ import threading
 
 from shade.models import Utterance
 
-_LABELS = {"me": "Me", "them": "Them"}
+_LABELS = {"me": "Me", "them": "Them", "note": "Note"}
 
 
 def format_lines(utts: list[Utterance]) -> str:

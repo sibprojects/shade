@@ -12,6 +12,7 @@ Format:
 2. Then, only if useful, up to 4 short bullet points with supporting details.
 3. If the task needs code, put it in a single fenced code block after the bullets, labeled with its language (```python, ```php, ```go, ...).
 Never add preambles, apologies or meta commentary. English only.
+Lines marked "Note" in the conversation are typed to you by the user (corrections, preferences, facts): follow them.
 The user's profile and the context of this call follow."""
 
 DETECT_RULES = """\
