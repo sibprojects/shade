@@ -118,7 +118,10 @@ and **Apply** changes things without closing the window.
   bullets, then code in one block if the task needs it. Hints stream token by
   token.
 - **Display:** a normal window for a second monitor, or a semi-transparent
-  always-on-top overlay with adjustable opacity and click-through.
+  always-on-top overlay with adjustable opacity and click-through. Move the
+  overlay by its status line, or drag anywhere with **Ctrl** held; drag the
+  border between the hint and the transcript to resize them (remembered, in
+  the window too).
 - **Hidden from screen sharing:** every Shade window uses
   `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`, so it is not in your
   shared screen or in recordings.

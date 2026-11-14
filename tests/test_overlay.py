@@ -70,6 +70,12 @@ def test_overlay_blocks_are_2px_apart(qtbot):
     o.show()
     qtbot.waitExposed(o)
     widgets = [o.view._error, o.view._current, o.view._transcript, o.view._status]
+    def top(w):
+        return w.mapTo(o.view, w.rect().topLeft()).y()
+
+    def bottom(w):
+        return w.mapTo(o.view, w.rect().bottomLeft()).y()
+
     for upper, lower in zip(widgets, widgets[1:]):
-        gap = lower.geometry().top() - upper.geometry().bottom() - 1
+        gap = top(lower) - bottom(upper) - 1
         assert gap == 2, (upper, lower, gap)
