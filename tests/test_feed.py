@@ -64,7 +64,7 @@ def test_scrolling_is_not_taken_over_while_the_answer_streams(qtbot):
     assert bar.value() == kept
 
 
-def test_new_question_scrolls_to_its_start_once(qtbot):
+def test_new_question_comes_into_view(qtbot):
     v = HintView()
     qtbot.addWidget(v)
     v.resize(400, 300)
@@ -89,3 +89,45 @@ def test_new_question_scrolls_to_its_start_once(qtbot):
     bar.setValue(0)
     v.handle(HintDelta(2, "Streaming answer."))
     assert bar.value() == 0
+
+
+def _shown_view(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    v.resize(400, 300)
+    v.show()
+    qtbot.waitExposed(v)
+    return v
+
+
+def test_streaming_answer_is_followed_line_by_line_to_the_end(qtbot):
+    v = _shown_view(qtbot)
+    bar = v._current.verticalScrollBar()
+    v.handle(HintStarted(1, "auto", "Q"))
+    for i in range(40):
+        v.handle(HintDelta(1, f"Line {i} of the answer.\n\n"))
+        assert bar.value() == bar.maximum()
+    assert bar.maximum() > 0
+
+
+def test_following_stops_when_the_user_scrolls_up_and_resumes_at_the_bottom(qtbot):
+    v = _shown_view(qtbot)
+    bar = v._current.verticalScrollBar()
+    v.handle(HintStarted(1, "auto", "Q"))
+    v.handle(HintDelta(1, LONG))
+    bar.setValue(10)  # the user scrolls up to read
+    v.handle(HintDelta(1, "\n\nmore"))
+    assert bar.value() == 10
+    bar.setValue(bar.maximum())  # back at the bottom: follow again
+    v.handle(HintDelta(1, "\n\neven more\n\nand more"))
+    assert bar.value() == bar.maximum()
+
+
+def test_next_question_follows_again(qtbot):
+    v = _shown_view(qtbot)
+    bar = v._current.verticalScrollBar()
+    _answer(v, 1, "Q1", LONG)
+    bar.setValue(0)
+    v.handle(HintStarted(2, "auto", "Q2"))
+    v.handle(HintDelta(2, LONG))
+    assert bar.value() == bar.maximum()
