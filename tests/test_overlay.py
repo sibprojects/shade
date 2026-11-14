@@ -69,7 +69,7 @@ def test_overlay_blocks_are_2px_apart(qtbot):
     o.view._error.show()  # status, error, hint and transcript all present
     o.show()
     qtbot.waitExposed(o)
-    widgets = [o.view._error, o.view._current, o.view._transcript, o.view._status]
+    widgets = [o.view._error, o.view._current, o.view._transcript, o.view.note, o.view._status]
     def top(w):
         return w.mapTo(o.view, w.rect().topLeft()).y()
 

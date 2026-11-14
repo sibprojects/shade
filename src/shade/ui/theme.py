@@ -28,6 +28,9 @@ QPushButton {{ background: {c['panel']}; color: {c['text']}; border: 1px solid {
     border-radius: 6px; padding: 4px 12px; }}
 QPushButton:hover {{ border-color: {c['accent']}; }}
 QPushButton:pressed {{ background: {c['border']}; }}
+QLineEdit {{ background: {c['panel']}; color: {c['text']}; border: 1px solid {c['border']};
+    border-radius: 6px; padding: 4px 8px; }}
+QLineEdit:focus {{ border-color: {c['accent']}; }}
 a {{ color: {c['accent']}; }}
 """
 
@@ -42,4 +45,6 @@ def overlay_stylesheet(bg: str, text: str, opacity: float) -> str:
         f"QTextBrowser, QPlainTextEdit {{ background: {rgba}; color: {text};"
         " border: 1px solid rgba(255,255,255,40); border-radius: 8px; }"
         f"QLabel {{ color: {text}; background: {rgba}; border-radius: 4px; padding: 2px 6px; }}"
+        f"QLineEdit {{ color: {text}; background: {rgba}; border: 1px solid rgba(255,255,255,40);"
+        " border-radius: 4px; padding: 2px 6px; }"
     )

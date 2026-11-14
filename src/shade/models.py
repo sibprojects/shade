@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal, Union
 
-Source = Literal["me", "them"]
-Trigger = Literal["auto", "hotkey", "screenshot", "action", "recap"]
+Source = Literal["me", "them", "note"]  # note: typed by the user to the AI
+Trigger = Literal["auto", "hotkey", "screenshot", "action", "recap", "typed"]
 
 
 @dataclass(frozen=True)

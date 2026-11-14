@@ -85,7 +85,9 @@ class Session:
             self.engine.on_utterance,
             on_error=status,
             # The call topic and the last lines help the speech model with terms.
-            prompt_fn=lambda: build_stt_prompt(profile_text, transcript.all()[-2:]),
+            prompt_fn=lambda: build_stt_prompt(
+                profile_text, [u for u in transcript.all() if u.source != "note"][-2:]
+            ),
         )
         self.sources = []
         for name, cls, device in (
@@ -146,6 +148,8 @@ class ShadeApp(QObject):
         for view in (self.window.view, self.overlay.view):
             self.bridge.event.connect(view.handle)
         self.window.view.action_requested.connect(self.on_hotkey)  # buttons do what the hotkeys do
+        for view in (self.window.view, self.overlay.view):
+            view.note_submitted.connect(self.add_note)
 
         self.tray = QSystemTrayIcon(make_icon())
         self.tray.setToolTip("Shade — loading speech model…")
@@ -202,6 +206,12 @@ class ShadeApp(QObject):
             self.session.engine.quick_action(action)
         elif action == "recap":
             self.session.engine.recap()
+
+    def add_note(self, text: str, ask: bool) -> None:
+        if not self.session:
+            self.bridge.emit_event(Status("Start a session first."))
+            return
+        self.session.engine.add_note(text, ask)
 
     def _on_screenshot(self, png: bytes) -> None:
         if self.session:

@@ -153,6 +153,20 @@ class Engine:
             return
         self._start("action", instruction, None, label=label)
 
+    def add_note(self, text: str, ask: bool) -> None:
+        """A note typed by the user: it joins the transcript (so every later answer
+        sees it) and, with `ask`, the AI answers it right away."""
+        text = text.strip()
+        if not text:
+            return
+        now = self.clock()
+        u = Utterance("note", text, now, now)
+        self.transcript.add(u)
+        self.writer.write_utterance(u)
+        self.on_event(UtteranceAdded(u))
+        if ask:
+            self._start("typed", text, None)
+
     def recap(self) -> None:
         """What did I miss: a summary of the last few minutes of the call."""
         if not self.transcript.window(self.clock(), RECAP_SECONDS):
