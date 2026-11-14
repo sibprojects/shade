@@ -303,6 +303,14 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
 
 - **Profiles:** put your own `.md` files in `profiles/` (see
   `profiles/example.md`) or use **Browse…**.
+- **Create profile** (tray → **Create profile…**): paste or load your CV and
+  the job description (`.txt`, `.md` or `.docx`), add optional call notes, and
+  the answer model writes a profile in Shade's format: About me, Experience,
+  This call (with a *Terms* line for the speech model), How to answer, and
+  *Gaps*: job requirements your CV doesn't show, each with an honest angle.
+  Only facts from your documents are used. Edit the result, then **Save**; it
+  goes into `profiles/` without overwriting an existing file. About 15 s with
+  Claude Code.
 - **Settings:** tray → **Settings…** (provider, models, display, audio
   devices, hotkeys). Saved to `settings.toml` next to the app, without keys.
 - **Code in hints:** shown on black with syntax colors for PHP, Python and Go

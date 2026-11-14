@@ -40,6 +40,7 @@ from shade.ui.hotkeys import HotkeyManager
 from shade.ui.icon import make_icon
 from shade.ui.main_window import MainWindow
 from shade.ui.overlay import Overlay
+from shade.ui.profile_dialog import ProfileDialog
 from shade.ui.region_select import RegionSelector
 from shade.ui.settings_dialog import SettingsDialog
 
@@ -236,6 +237,7 @@ class ShadeApp(QObject):
         self.start_menu.aboutToShow.connect(self._fill_profiles)
         self.stop_action = menu.addAction("Stop session", self.stop_session)
         self.stop_action.setEnabled(False)
+        menu.addAction("Create profile…", self.create_profile)
         actions_menu = menu.addMenu("Quick actions")
         for name, (label, _, _) in QUICK_ACTIONS.items():
             actions_menu.addAction(label, lambda n=name: self.on_hotkey(n))
@@ -416,6 +418,14 @@ class ShadeApp(QObject):
             self.bridge.emit_event(Status(NEXT_SESSION))
         if not self.session:
             self.load_transcriber()
+
+    def create_profile(self) -> None:
+        """Write a profile from a CV and a job description with the answer model."""
+        dialog = ProfileDialog(
+            lambda: make_provider_or_unavailable(self.settings)[0], Path(self.settings.profiles_dir)
+        )
+        dialog.saved.connect(lambda path: self.notify(f"Profile saved: {path.stem}. Start it from Start session."))
+        dialog.exec()
 
     def open_sessions_folder(self) -> None:
         folder = Path(self.settings.sessions_dir)
