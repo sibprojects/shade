@@ -37,6 +37,7 @@ def _map_error(e: Exception) -> ProviderError:
 
 class ClaudeProvider:
     supports_images = True
+    label = "Claude API"
 
     def __init__(self, model: str, detector_model: str, effort: str, client=None) -> None:
         self.model = model

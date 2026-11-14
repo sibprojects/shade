@@ -81,6 +81,7 @@ class Settings:
     cc_path: str = ""  # empty: find `claude` automatically
     cc_auto: bool = True  # questions are found by rules, so only answers use the plan
     presets: dict[str, dict] = field(default_factory=lambda: copy.deepcopy(DEFAULT_PRESETS))
+    fallback_provider: str = ""  # answers when the main model fails (e.g. usage limit); "" = none
     display_mode: str = "window"
     window_theme: str = "day"  # "day" | "night"
     window_font_size: int = 14
@@ -127,11 +128,6 @@ def auto_allowed(s: Settings) -> bool:
 def detection_by_rules(s: Settings) -> bool:
     """With the subscription, questions are found by rules so detection doesn't spend the plan."""
     return s.provider == "claude_code"
-
-
-def billable_prices(s: Settings) -> dict[str, list[float]]:
-    """Prices for the session cost; subscription answers aren't billed per token."""
-    return {} if s.provider == "claude_code" else s.prices
 
 
 def stt_config(s: Settings) -> tuple[str, str]:

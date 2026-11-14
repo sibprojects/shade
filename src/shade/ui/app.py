@@ -21,7 +21,6 @@ from shade.config import (
     DEFAULT_SETTINGS_PATH,
     Settings,
     auto_allowed,
-    billable_prices,
     detection_by_rules,
     load_settings,
     save_settings,
@@ -59,9 +58,9 @@ class Session:
     def __init__(self, settings: Settings, transcriber, profile: Path, bridge: QtBridge) -> None:
         # A provider that can't be built (e.g. missing key) still lets the session
         # transcribe; every hint then shows the reason in the hint area.
-        provider, self.provider_problem = make_provider_or_unavailable(settings)
-        self.provider = provider
         status = lambda msg: bridge.emit_event(Status(msg))  # noqa: E731
+        provider, self.provider_problem = make_provider_or_unavailable(settings, on_status=status)
+        self.provider = provider
         start = time.monotonic()
         clock = lambda: time.monotonic() - start  # noqa: E731
         self.writer = SessionWriter(Path(settings.sessions_dir), profile.stem, datetime.now())
@@ -70,7 +69,7 @@ class Session:
             detector=RuleDetector() if detection_by_rules(settings) else Detector(provider, on_error=status),
             transcript=Transcript(),
             writer=self.writer,
-            cost=CostMeter(billable_prices(settings)),
+            cost=CostMeter(settings.prices),  # subscription answers are not charged (provider.billable)
             profile_text=profile.read_text(encoding="utf-8", errors="replace"),
             context_seconds=settings.context_seconds,
             on_event=bridge.emit_event,
@@ -409,7 +408,7 @@ class ShadeApp(QObject):
             self.set_display_mode(new.display_mode)
         # Provider, models and audio apply to the next session.
         session_keys = (
-            "provider", "claude_model", "claude_effort", "claude_detector_model", "presets",
+            "provider", "claude_model", "claude_effort", "claude_detector_model", "presets", "fallback_provider",
             "mic_device", "mic_gain", "loopback_device", "vad_silence_ms", "context_seconds", "prices",
             "stt_model",
         )
