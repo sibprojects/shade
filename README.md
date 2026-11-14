@@ -211,7 +211,8 @@ rules on this PC (no model call), so only the answers use the plan; auto hints
 can be turned off in Settings → Model. Use it for yourself only; see
 [Claude Code legal and compliance](https://code.claude.com/docs/en/legal-and-compliance).
 
-**Fallback model** (Settings → Model → *If it fails, use*): when the main
+**Fallback model** (Settings → Model: the main model and its settings, then
+the fallback model with its own settings): when the main
 model fails before an answer starts (usage limit, outage, local server
 stopped, missing key), the same question goes to the fallback, and the
 status line says so once. The fallback keeps answering for 5 minutes, then
