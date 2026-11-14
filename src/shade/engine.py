@@ -39,6 +39,12 @@ NO_VISION = "Selected local model does not support images."
 STALE_DETECT_S = 10.0
 STOP_JOIN_S = 2.0
 MAX_PREVIOUS = 3  # earlier answers sent along, so follow-up questions build on them
+RECAP_SECONDS = 300.0  # "what did I miss" looks this far back
+RECAP_TASK = (
+    "Recap the conversation above for me: I lost track for a moment. In 3-5 short bullet points: "
+    "what was discussed, any question asked to me and whether I answered it, anything I was asked to do. "
+    "End with one line: what to say or do next. No code."
+)
 
 # Quick actions: name -> (label shown, instruction to the model, needs a previous answer).
 QUICK_ACTIONS: dict[str, tuple[str, str, bool]] = {
@@ -147,6 +153,13 @@ class Engine:
             return
         self._start("action", instruction, None, label=label)
 
+    def recap(self) -> None:
+        """What did I miss: a summary of the last few minutes of the call."""
+        if not self.transcript.window(self.clock(), RECAP_SECONDS):
+            self.on_event(Status("Nothing to recap yet."))
+            return
+        self._start("recap", RECAP_TASK, None, label="Recap", context_seconds=RECAP_SECONDS)
+
     def new_topic(self) -> None:
         """Forget earlier answers: the next question starts from scratch."""
         with self._lock:
@@ -201,7 +214,14 @@ class Engine:
         if question and self.auto_enabled:
             self._start("auto", question, None)
 
-    def _start(self, trigger: Trigger, question: str, image: bytes | None, label: str = "") -> None:
+    def _start(
+        self,
+        trigger: Trigger,
+        question: str,
+        image: bytes | None,
+        label: str = "",
+        context_seconds: float | None = None,
+    ) -> None:
         with self._lock:
             if self._stopped:
                 return
@@ -211,7 +231,7 @@ class Engine:
                     return
                 cur.cancel.set()
             self._next_id += 1
-            context = self.transcript.window(self.clock(), self.context_seconds)
+            context = self.transcript.window(self.clock(), context_seconds or self.context_seconds)
             previous = list(self._exchanges[-MAX_PREVIOUS:])
             run = _Run(HintRequest(self._next_id, trigger, question, context, image, previous, label))
             run.thread = threading.Thread(
@@ -242,7 +262,7 @@ class Engine:
         answer = "".join(parts)
         if run.cancel.is_set():
             answer += " _(cancelled)_"
-        elif answer.strip():
+        elif answer.strip() and req.trigger != "recap":  # a recap is not an answer to build on
             with self._lock:
                 self._exchanges.append((req.question or SCREENSHOT_TASK, answer))
                 del self._exchanges[:-MAX_PREVIOUS]
