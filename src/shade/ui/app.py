@@ -31,6 +31,7 @@ from shade.detect import Detector, RuleDetector
 from shade.engine import QUICK_ACTIONS, Engine
 from shade.llm.factory import make_provider_or_unavailable
 from shade.models import HintError, Status
+from shade.notes import has_speech, latest_session, start_notes
 from shade.session import SessionWriter
 from shade.stt import SttWorker, Transcriber, build_stt_prompt
 from shade.transcript import Transcript
@@ -111,6 +112,8 @@ class Session:
 class ShadeApp(QObject):
     transcriber_ready = Signal(object)
     transcriber_failed = Signal(str)
+    notes_done = Signal(object)  # Path of notes.md
+    notes_failed = Signal(str)
 
     def __init__(self, settings_path: Path = DEFAULT_SETTINGS_PATH) -> None:
         self.qapp = QApplication.instance() or QApplication(sys.argv)
@@ -155,6 +158,10 @@ class ShadeApp(QObject):
         self.hotkeys.error.connect(lambda msg: self.bridge.emit_event(Status(msg)))
         self.hotkeys.start(self.settings.hotkeys)
 
+        self._open_on_click: Path | None = None  # file a click on the tray message opens
+        self.tray.messageClicked.connect(self._on_message_clicked)
+        self.notes_done.connect(self._on_notes_done)
+        self.notes_failed.connect(self.notify)
         self.transcriber_ready.connect(self._on_transcriber_ready)
         self.transcriber_failed.connect(self._on_transcriber_failed)
         self.load_transcriber()
@@ -238,6 +245,7 @@ class ShadeApp(QObject):
         self.stop_action = menu.addAction("Stop session", self.stop_session)
         self.stop_action.setEnabled(False)
         menu.addAction("Create profile…", self.create_profile)
+        menu.addAction("Call notes for last session", self.notes_for_last_session)
         actions_menu = menu.addMenu("Quick actions")
         for name, (label, _, _) in QUICK_ACTIONS.items():
             actions_menu.addAction(label, lambda n=name: self.on_hotkey(n))
@@ -293,8 +301,35 @@ class ShadeApp(QObject):
 
     # ---- actions ----------------------------------------------------------
 
-    def notify(self, message: str) -> None:
+    def notify(self, message: str, open_on_click: Path | None = None) -> None:
+        self._open_on_click = open_on_click
         self.tray.showMessage("Shade", message, QSystemTrayIcon.MessageIcon.Information, 4000)
+
+    def _on_message_clicked(self) -> None:
+        path, self._open_on_click = self._open_on_click, None
+        if path is not None and path.exists():
+            os.startfile(path.resolve())  # noqa: S606 (Windows only)
+
+    # ---- call notes -------------------------------------------------------
+
+    def write_notes(self, session_dir: Path) -> None:
+        self.notify("Writing call notes…")
+        start_notes(
+            lambda: make_provider_or_unavailable(self.settings)[0],
+            session_dir,
+            self.notes_done.emit,  # signals: back on the UI thread
+            self.notes_failed.emit,
+        )
+
+    def _on_notes_done(self, path: Path) -> None:
+        self.notify(f"Call notes ready: {path.parent.name}. Click to open.", open_on_click=path)
+
+    def notes_for_last_session(self) -> None:
+        last = latest_session(Path(self.settings.sessions_dir))
+        if last is None or not has_speech(last):
+            self.notify("No session with a transcript yet.")
+            return
+        self.write_notes(last)
 
     def start_session(self, profile: Path) -> None:
         if self.session:
@@ -316,15 +351,18 @@ class ShadeApp(QObject):
             self.bridge.emit_event(HintError(0, self.session.provider_problem))
             self.notify(self.session.provider_problem)
 
-    def stop_session(self) -> None:
+    def stop_session(self, write_notes: bool = True) -> None:
         if not self.session:
             return
         self.vram_timer.stop()
+        session_dir = self.session.writer.dir
         self.session.stop()
         self.session = None
         self.stop_action.setEnabled(False)
         self.tray.setToolTip("Shade — ready")
         self.bridge.emit_event(Status("Session stopped."))
+        if write_notes and self.settings.auto_notes and has_speech(session_dir):
+            self.write_notes(session_dir)
 
     def set_auto(self, on: bool) -> None:
         self.settings.auto_enabled = on
@@ -434,7 +472,7 @@ class ShadeApp(QObject):
 
     def quit(self) -> None:
         self.hotkeys.stop()
-        self.stop_session()
+        self.stop_session(write_notes=False)  # the app is closing: no time for notes
         self.tray.hide()
         self.qapp.quit()
 
