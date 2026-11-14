@@ -24,6 +24,10 @@ QTabBar::tab {{ background: {c['bg']}; color: {c['muted']}; padding: 4px 12px;
     border: 1px solid {c['border']}; border-bottom: none; }}
 QTabBar::tab:selected {{ background: {c['panel']}; color: {c['text']}; }}
 QSplitter::handle {{ background: {c['border']}; }}
+QPushButton {{ background: {c['panel']}; color: {c['text']}; border: 1px solid {c['border']};
+    border-radius: 6px; padding: 4px 12px; }}
+QPushButton:hover {{ border-color: {c['accent']}; }}
+QPushButton:pressed {{ background: {c['border']}; }}
 a {{ color: {c['accent']}; }}
 """
 

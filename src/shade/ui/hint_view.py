@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
 from PySide6.QtWidgets import (
+    QHBoxLayout,
     QLabel,
     QPlainTextEdit,
+    QPushButton,
     QSplitter,
     QTabWidget,
     QTextBrowser,
@@ -23,8 +25,12 @@ from shade.models import (
     Status,
     UtteranceAdded,
 )
+from shade.engine import QUICK_ACTIONS
 from shade.transcript import format_lines
 from shade.ui.syntax import SYNTAX, lexer_for, spans
+
+# Buttons in the window, between the answers and the transcript/history tabs.
+ACTION_BUTTONS = [(name, label) for name, (label, _, _) in QUICK_ACTIONS.items()] + [("recap", "Recap")]
 
 ERROR_MS = 8000
 CODE_BG = QColor("#000000")
@@ -118,6 +124,8 @@ def _entry_markdown(question: str, answer: str) -> str:
 
 
 class HintView(QWidget):
+    action_requested = Signal(str)  # quick action or "recap", from the buttons
+
     def __init__(
         self,
         transcript_lines: int | None = None,
@@ -171,6 +179,8 @@ class HintView(QWidget):
         layout.addWidget(self._error)  # alerts stay on top, next to the hint
 
         self.tabs: QTabWidget | None = None
+        self.action_bar: QWidget | None = None
+        self.action_buttons: list[QPushButton] = []
         if compact:
             layout.setSpacing(2)  # overlay: blocks close together
             # Overlay: the hint takes all the space; a fixed strip of the last
@@ -187,9 +197,27 @@ class HintView(QWidget):
             self.tabs.addTab(self._transcript, "Transcript")
             if show_history:
                 self.tabs.addTab(self._history_view, "History")
+            # Quick action buttons, centered right above the tabs.
+            self.action_bar = QWidget()
+            row = QHBoxLayout(self.action_bar)
+            row.setContentsMargins(0, 4, 0, 4)
+            row.addStretch(1)
+            for name, label in ACTION_BUTTONS:
+                button = QPushButton(label)
+                button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                button.clicked.connect(lambda checked=False, n=name: self.action_requested.emit(n))
+                row.addWidget(button)
+                self.action_buttons.append(button)
+            row.addStretch(1)
+            lower = QWidget()
+            lower_layout = QVBoxLayout(lower)
+            lower_layout.setContentsMargins(0, 0, 0, 0)
+            lower_layout.setSpacing(0)
+            lower_layout.addWidget(self.action_bar)
+            lower_layout.addWidget(self.tabs, 1)
             split = QSplitter(Qt.Orientation.Vertical)
             split.addWidget(self._current)
-            split.addWidget(self.tabs)
+            split.addWidget(lower)
             split.setStretchFactor(0, 3)
             split.setStretchFactor(1, 2)
             layout.addWidget(split, 1)

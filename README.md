@@ -323,7 +323,8 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   writes?") builds on them. A new question scrolls to its start once; while
   it streams, the view stays where you scroll. `Ctrl+Alt+D` clears the answers
   and starts a new topic.
-- **Quick actions** (hotkeys or tray → **Quick actions**): make the last
+- **Quick actions** (buttons in the window above the transcript, hotkeys, or
+  tray → **Quick actions**): make the last
   answer shorter (1–2 sentences to say right away), add more detail, show a
   code example, or suggest three questions to ask the other side. The result
   becomes the last answer, so actions can follow each other.

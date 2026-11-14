@@ -145,6 +145,7 @@ class ShadeApp(QObject):
         )
         for view in (self.window.view, self.overlay.view):
             self.bridge.event.connect(view.handle)
+        self.window.view.action_requested.connect(self.on_hotkey)  # buttons do what the hotkeys do
 
         self.tray = QSystemTrayIcon(make_icon())
         self.tray.setToolTip("Shade — loading speech model…")
