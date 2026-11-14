@@ -95,7 +95,9 @@ and **Apply** changes things without closing the window.
   questions. Anything in English where a fast, well-informed answer matters.
 - **Two audio sources:** your microphone is labeled *Me*, system audio
   (Zoom, Teams, Meet, any app) is *Them*. No speaker diarization: the label
-  comes from the source.
+  comes from the source. Like live captions, one side's phrases join one
+  line until the other side speaks (on screen, in `transcript.md` and in what
+  the model sees).
 - **Speech-to-text:** runs locally on the GPU with faster-whisper
   (`large-v3-turbo`, float16; `large-v3` or `distil-large-v3` in Settings).
   Silero VAD cuts speech into utterances on a ~600 ms pause and keeps 0.2 s

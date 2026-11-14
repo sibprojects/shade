@@ -47,12 +47,17 @@ def test_dismiss_clears_current(qtbot):
     assert v.current_text() == ""
 
 
-def test_transcript_lines(qtbot):
-    v = HintView(transcript_lines=2)
+def test_overlay_transcript_keeps_the_last_lines(qtbot):
+    from shade.ui.hint_view import OVERLAY_TRANSCRIPT_LINES
+
+    v = HintView(transcript_lines=2, compact=True)
     qtbot.addWidget(v)
-    for i in range(3):
-        v.handle(UtteranceAdded(Utterance("them", f"line {i}", i, i + 1)))
-    assert v.transcript_text().splitlines() == ["[00:01] Them: line 1", "[00:02] Them: line 2"]
+    n = OVERLAY_TRANSCRIPT_LINES + 5
+    for i in range(n):  # speakers alternate, so each phrase is its own line
+        v.handle(UtteranceAdded(Utterance("them" if i % 2 else "me", f"line {i}", i, i + 1)))
+    lines = v.transcript_text().splitlines()
+    assert len(lines) == OVERLAY_TRANSCRIPT_LINES
+    assert lines[-1].endswith(f"line {n - 1}")
 
 
 def test_window_mode_has_transcript_and_history_tabs(qtbot):

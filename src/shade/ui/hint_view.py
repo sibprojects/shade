@@ -27,7 +27,7 @@ from shade.models import (
     UtteranceAdded,
 )
 from shade.engine import QUICK_ACTIONS
-from shade.transcript import format_lines
+from shade.transcript import joins, line_start
 from shade.ui.syntax import SYNTAX, lexer_for, spans
 from shade.ui.ui_state import ui_state
 
@@ -40,6 +40,7 @@ CODE_FG = QColor("#e8e8e8")
 CODE_FONTS = ["Consolas", "Cascadia Mono", "Courier New"]
 CODE_GAP = 8  # px above and below a code block
 FEED_MAX = 20  # earlier answers kept on screen
+OVERLAY_TRANSCRIPT_LINES = 200
 HEADER_PREFIX = "Q:"  # starts each question line in the answer feed
 
 
@@ -194,8 +195,10 @@ class HintView(QWidget):
 
         self._transcript = QPlainTextEdit()
         self._transcript.setReadOnly(True)
+        self._last_source: str | None = None  # speaker of the last transcript line
         if transcript_lines:
-            self._transcript.setMaximumBlockCount(transcript_lines)
+            # The overlay strip can be dragged taller, so it keeps a good amount of history.
+            self._transcript.setMaximumBlockCount(OVERLAY_TRANSCRIPT_LINES)
 
         self._compact = compact
         self._code_pt = code_font_size or max(7, font_size - 2)
@@ -299,7 +302,14 @@ class HintView(QWidget):
 
     def handle(self, e: Event) -> None:
         if isinstance(e, UtteranceAdded):
-            self._transcript.appendPlainText(format_lines([e.u]))
+            if joins(self._last_source, e.u):
+                # Same speaker: the phrase continues their line, like live captions.
+                cursor = self._transcript.textCursor()
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.insertText(" " + e.u.text)
+            else:
+                self._transcript.appendPlainText(line_start(e.u))
+            self._last_source = e.u.source
             bar = self._transcript.verticalScrollBar()
             bar.setValue(bar.maximum())
         elif isinstance(e, HintStarted):

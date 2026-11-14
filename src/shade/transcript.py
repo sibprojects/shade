@@ -10,11 +10,26 @@ from shade.models import Utterance
 _LABELS = {"me": "Me", "them": "Them", "note": "Note"}
 
 
+def joins(prev_source: str | None, u: Utterance) -> bool:
+    """Like live captions: a speaker's phrases join one line until the other
+    side speaks. Typed notes always get their own line."""
+    return u.source == prev_source and u.source != "note"
+
+
+def line_start(u: Utterance) -> str:
+    m, s = divmod(int(u.start), 60)
+    return f"[{m:02d}:{s:02d}] {_LABELS[u.source]}: {u.text}"
+
+
 def format_lines(utts: list[Utterance]) -> str:
-    lines = []
+    lines: list[str] = []
+    prev: str | None = None
     for u in utts:
-        m, s = divmod(int(u.start), 60)
-        lines.append(f"[{m:02d}:{s:02d}] {_LABELS[u.source]}: {u.text}")
+        if lines and joins(prev, u):
+            lines[-1] += " " + u.text
+        else:
+            lines.append(line_start(u))
+        prev = u.source
     return "\n".join(lines)
 
 
