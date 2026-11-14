@@ -50,6 +50,7 @@ HOTKEY_LABELS = {
     "more": "Last answer: more detail",
     "code": "Last answer: code example",
     "followups": "Questions to ask them",
+    "recap": "What did I miss (recap)",
 }
 
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Union
 
 Source = Literal["me", "them"]
-Trigger = Literal["auto", "hotkey", "screenshot", "action"]
+Trigger = Literal["auto", "hotkey", "screenshot", "action", "recap"]
 
 
 @dataclass(frozen=True)

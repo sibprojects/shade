@@ -58,6 +58,7 @@ DEFAULT_HOTKEYS = {
     "more": "<ctrl>+<alt>+2",
     "code": "<ctrl>+<alt>+3",
     "followups": "<ctrl>+<alt>+4",
+    "recap": "<ctrl>+<alt>+r",
 }
 
 DEFAULT_PRICES = {

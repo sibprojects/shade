@@ -246,6 +246,7 @@ side was playing.
 | Last answer: more detail | `Ctrl+Alt+2` |
 | Last answer: code example | `Ctrl+Alt+3` |
 | Questions to ask them | `Ctrl+Alt+4` |
+| What did I miss (recap) | `Ctrl+Alt+R` |
 
 All hotkeys are global (they work while another app has focus) and can be
 changed in Settings. In the screenshot selector, Esc or a right click cancels.
@@ -308,6 +309,9 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   answer shorter (1–2 sentences to say right away), add more detail, show a
   code example, or suggest three questions to ask the other side. The result
   becomes the last answer, so actions can follow each other.
+- **What did I miss** (`Ctrl+Alt+R`): 3–5 bullets on the last 5 minutes of the
+  call (topics, questions to you and whether you answered, tasks) and what to
+  say next. A recap is not sent along with later questions.
 - **Sessions:** tray → **Open sessions folder**.
 - **Local model:** run Ollama (`ollama pull qwen2.5vl:7b`) or LM Studio,
   choose **Local model** in Settings and check the base URL

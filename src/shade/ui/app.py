@@ -192,6 +192,8 @@ class ShadeApp(QObject):
             self.region.start()
         elif action in QUICK_ACTIONS:
             self.session.engine.quick_action(action)
+        elif action == "recap":
+            self.session.engine.recap()
 
     def _on_screenshot(self, png: bytes) -> None:
         if self.session:
@@ -238,6 +240,8 @@ class ShadeApp(QObject):
         actions_menu = menu.addMenu("Quick actions")
         for name, (label, _, _) in QUICK_ACTIONS.items():
             actions_menu.addAction(label, lambda n=name: self.on_hotkey(n))
+        actions_menu.addSeparator()
+        actions_menu.addAction("What did I miss (recap)", lambda: self.on_hotkey("recap"))
         menu.addSeparator()
         self.auto_action = menu.addAction("Auto hints")
         self.auto_action.setCheckable(True)
