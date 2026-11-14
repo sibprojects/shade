@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+from dataclasses import replace
+from typing import Callable
 
 from shade.config import Settings
 from shade.llm.base import Provider, ProviderError
 from shade.llm.claude import ClaudeProvider
 from shade.llm.claude_code import ClaudeCodeProvider, find_claude
+from shade.llm.fallback import FallbackProvider
 from shade.llm.openai_compat import OpenAIProvider
 from shade.models import Usage
 
@@ -32,11 +35,22 @@ class UnavailableProvider:
         raise ProviderError(self.message)
 
 
-def make_provider_or_unavailable(s: Settings) -> tuple[Provider, str | None]:
+def make_provider_or_unavailable(
+    s: Settings, on_status: Callable[[str], None] | None = None
+) -> tuple[Provider, str | None]:
+    """The selected provider (wrapped with the fallback one, if set) and a
+    problem to show at session start, if any."""
     try:
-        return make_provider(s), None
+        primary, problem = make_provider(s), None
     except ProviderError as e:
-        return UnavailableProvider(str(e)), str(e)
+        primary, problem = UnavailableProvider(str(e)), str(e)
+    if not s.fallback_provider or s.fallback_provider == s.provider:
+        return primary, problem
+    try:
+        backup = make_provider(replace(s, provider=s.fallback_provider))
+    except ProviderError as e:
+        return primary, problem or f"Fallback model unavailable: {e}"
+    return FallbackProvider(primary, backup, on_status=on_status), problem
 
 
 def make_provider(s: Settings) -> Provider:

@@ -267,6 +267,7 @@ class Engine:
                 self._exchanges.append((req.question or SCREENSHOT_TASK, answer))
                 del self._exchanges[:-MAX_PREVIOUS]
         usage = self.provider.last_usage
-        cost = self.cost.add(self.provider.model, usage)
+        # Subscription answers (Claude Code) are not charged per token.
+        cost = self.cost.add(self.provider.model, usage) if getattr(self.provider, "billable", True) else 0.0
         self.writer.write_hint(req, answer, self.provider.model, usage, cost, self.cost.total)
         self.on_event(HintDone(req.id, self.provider.model, usage, cost, self.cost.total))

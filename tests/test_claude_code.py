@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from shade.config import Settings, auto_allowed, billable_prices, stt_config
+from shade.config import Settings, auto_allowed, stt_config
 from shade.llm.base import ProviderError
 from shade.llm.claude_code import ClaudeCodeProvider
 from shade.llm.factory import make_provider_or_unavailable
@@ -107,6 +107,5 @@ def test_auto_hints_need_permission_with_claude_code():
     assert auto_allowed(Settings(provider="claude_code", cc_auto=True))
 
 
-def test_subscription_answers_cost_nothing_extra():
-    assert billable_prices(Settings(provider="claude_code")) == {}
-    assert billable_prices(Settings()) == Settings().prices
+def test_subscription_answers_cost_nothing_extra(cc):
+    assert cc.billable is False

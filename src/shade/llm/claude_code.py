@@ -144,6 +144,8 @@ class ClaudeCodeProvider:
         self.model = model
         self.detector_model = detector_model
         self.effort = effort
+        self.billable = False  # covered by the subscription, not charged per token
+        self.label = "Claude Code"
         self.last_usage = Usage()
         self._command = list(command)
         self._spares: dict[tuple[str, str, str], _Run] = {}

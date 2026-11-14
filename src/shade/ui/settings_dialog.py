@@ -93,6 +93,12 @@ class SettingsDialog(QDialog):
         self.provider.addItem("Claude Code (subscription)", "claude_code")
         for key, p in self._presets.items():
             self.provider.addItem(p.get("label", key), key)
+        # Answers continue on this one when the main model fails (e.g. usage limit).
+        self.fallback = QComboBox()
+        self.fallback.addItem("(none)", "")
+        for i in range(self.provider.count()):
+            self.fallback.addItem(self.provider.itemText(i), self.provider.itemData(i))
+        self.fallback.setCurrentIndex(max(0, self.fallback.findData(settings.fallback_provider)))
         self.claude_model = QLineEdit(settings.claude_model)
         self.claude_detector = QLineEdit(settings.claude_detector_model)
         self.claude_effort = QComboBox()
@@ -242,6 +248,7 @@ class SettingsDialog(QDialog):
         form = QFormLayout()
         form.addRow("Provider", prov_row)
         form.addRow("", self.key_status)
+        form.addRow("If it fails, use", self.fallback)
         mt.addLayout(form)
         mt.addWidget(self.claude_box)
         mt.addWidget(self.cc_box)
@@ -455,6 +462,7 @@ class SettingsDialog(QDialog):
                 "supports_images": False,
             }
             self.provider.addItem(name, key)
+            self.fallback.addItem(name, key)
         self.provider.setCurrentIndex(self.provider.findData(key))
 
     # ---- result -------------------------------------------------------------
@@ -475,6 +483,7 @@ class SettingsDialog(QDialog):
             cc_path=self.cc_path.text().strip(),
             cc_auto=self.cc_auto.isChecked(),
             presets=copy.deepcopy(self._presets),
+            fallback_provider=self.fallback.currentData(),
             display_mode=self.display_mode.currentData(),
             window_theme=self.window_theme.currentData(),
             window_font_size=self.window_font.value(),
