@@ -78,4 +78,6 @@ def test_overlay_blocks_are_2px_apart(qtbot):
 
     for upper, lower in zip(widgets, widgets[1:]):
         gap = top(lower) - bottom(upper) - 1
-        assert gap == 2, (upper, lower, gap)
+        # The hint/transcript border is 1 px (a splitter); the other blocks are 2 px apart.
+        expected = 1 if (upper, lower) == (o.view._current, o.view._transcript) else 2
+        assert gap == expected, (upper, lower, gap)

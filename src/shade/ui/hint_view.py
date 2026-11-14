@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -41,6 +41,7 @@ CODE_FONTS = ["Consolas", "Cascadia Mono", "Courier New"]
 CODE_GAP = 8  # px above and below a code block
 FEED_MAX = 20  # earlier answers kept on screen
 OVERLAY_TRANSCRIPT_LINES = 200
+SPLIT_GRAB = 5  # px around the overlay's 1 px hint/transcript border that grab it
 HEADER_PREFIX = "Q:"  # starts each question line in the answer feed
 
 
@@ -211,6 +212,9 @@ class HintView(QWidget):
         layout.addWidget(self._error)  # alerts stay on top, next to the hint
 
         self.tabs: QTabWidget | None = None
+        self._split_key: str | None = None
+        self._split_dragging = False
+        self._vp_cursors: dict = {}
         self.action_bar: QWidget | None = None
         self.action_buttons: list[QPushButton] = []
         if compact:
@@ -220,8 +224,12 @@ class HintView(QWidget):
             self._transcript.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self._transcript.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self.split = QSplitter(Qt.Orientation.Vertical)
-            self.split.setHandleWidth(2)
+            self.split.setHandleWidth(1)  # thin; it can be grabbed SPLIT_GRAB px around it
             self.split.setChildrenCollapsible(False)
+            for vp in (self._current.viewport(), self._transcript.viewport()):
+                vp.setMouseTracking(True)
+                vp.installEventFilter(self)
+                self._vp_cursors[vp] = vp.cursor()
             self.split.addWidget(self._current)
             self.split.addWidget(self._transcript)
             self.split.setStretchFactor(0, 1)
@@ -293,10 +301,51 @@ class HintView(QWidget):
 
     def remember_split(self, key: str) -> None:
         """Restore the hint/transcript border from `key` and save it whenever it moves."""
+        self._split_key = key
         saved = ui_state().value(key)
         if saved is not None:
             self.split.restoreState(saved)
-        self.split.splitterMoved.connect(lambda *_: ui_state().setValue(key, self.split.saveState()))
+        self.split.splitterMoved.connect(self._save_split)
+
+    def _save_split(self, *_) -> None:
+        if self._split_key:
+            ui_state().setValue(self._split_key, self.split.saveState())
+
+    # ---- overlay border: grabbed a few pixels around it ---------------------
+
+    def _near_border(self, y_in_split: int) -> bool:
+        return abs(y_in_split - self._transcript.geometry().top()) <= SPLIT_GRAB
+
+    def eventFilter(self, obj, e):  # noqa: N802
+        if obj not in self._vp_cursors:
+            return super().eventFilter(obj, e)
+        kind = e.type()
+        if kind not in (QEvent.Type.MouseMove, QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease):
+            return super().eventFilter(obj, e)
+        y = obj.mapTo(self.split, e.position().toPoint()).y()
+        if self._split_dragging:
+            if kind == QEvent.Type.MouseMove:
+                sizes = self.split.sizes()
+                total = sum(sizes)
+                low = self._strip_height(1)
+                top = max(low, min(y, total - low))
+                self.split.setSizes([top, total - top])
+            elif kind == QEvent.Type.MouseButtonRelease:
+                self._split_dragging = False
+                self._save_split()
+            return True
+        near = self._near_border(y)
+        if kind == QEvent.Type.MouseMove:
+            obj.setCursor(Qt.CursorShape.SplitVCursor if near else self._vp_cursors[obj])
+        elif (
+            kind == QEvent.Type.MouseButtonPress
+            and near
+            and e.button() == Qt.MouseButton.LeftButton
+            and not e.modifiers() & Qt.KeyboardModifier.ControlModifier
+        ):
+            self._split_dragging = True
+            return True
+        return super().eventFilter(obj, e)
 
     # ---- event handling ----------------------------------------------
 

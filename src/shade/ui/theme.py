@@ -42,6 +42,8 @@ def overlay_stylesheet(bg: str, text: str, opacity: float) -> str:
     rgba = f"rgba({col.red()}, {col.green()}, {col.blue()}, {alpha})"
     return (
         "#overlay { background: transparent; }"
+        # The hint/transcript border looks like the other gaps between blocks.
+        "QSplitter::handle { background: transparent; }"
         f"QTextBrowser, QPlainTextEdit {{ background: {rgba}; color: {text};"
         " border: 1px solid rgba(255,255,255,40); border-radius: 8px; }"
         f"QLabel {{ color: {text}; background: {rgba}; border-radius: 4px; padding: 2px 6px; }}"
