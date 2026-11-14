@@ -301,10 +301,12 @@ uv run python -m shade
 ```
 
 After setup, start Shade with **`shade.bat`** (double-click it, or make a
-desktop shortcut to it): it runs in the tray without a console window, and
-whatever started it doesn't wait. Quit from the tray menu. After `git pull`,
-run `uv sync` once. If the tray icon doesn't appear, run
-`uv run python -m shade` to see the error.
+desktop shortcut to it): it runs `uv sync` first (so dependencies stay up to
+date after `git pull`; a fraction of a second when nothing changed), then
+starts Shade in the tray without a console window, and whatever started it
+doesn't wait. `uv` is found in PATH or its usual install folders. Quit from
+the tray menu. If the tray icon doesn't appear, run `uv run python -m shade`
+to see the error.
 
 API keys go into `.env` in the project folder (it is in `.gitignore`), e.g.
 `ANTHROPIC_API_KEY=sk-ant-...`. Variables already set in the environment
