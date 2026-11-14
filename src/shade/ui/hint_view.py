@@ -142,7 +142,10 @@ class HintView(QWidget):
         self._current_trigger = ""
         # Earlier answers of this topic stay on screen above the current one.
         self._feed: list[tuple[str, str]] = []
-        self._scroll_to_new = False
+        # While an answer streams, the view follows its last line, unless the
+        # user scrolls up to read; scrolling back to the bottom follows again.
+        self._follow = True
+        self._rendering = False
         self._history: list[str] = []
         self._model = ""
         self._total_cost = 0.0
@@ -160,6 +163,7 @@ class HintView(QWidget):
 
         self._current = QTextBrowser()
         self._current.setOpenExternalLinks(False)
+        self._current.verticalScrollBar().valueChanged.connect(self._on_user_scroll)
 
         self._history_view = QTextBrowser()
 
@@ -261,7 +265,7 @@ class HintView(QWidget):
             self._current_parts = []
             self._current_question = e.question
             self._current_trigger = e.trigger
-            self._scroll_to_new = True
+            self._follow = True
             self._render_current()
             self._update_status()
         elif isinstance(e, HintDelta):
@@ -303,24 +307,20 @@ class HintView(QWidget):
         markdown = "\n\n---\n\n".join(_entry_markdown(q, a) for q, a in entries)
         bar = self._current.verticalScrollBar()
         kept = bar.value()
-        self._current.setMarkdown(markdown)
-        style_code_blocks(self._current.document(), self._code_pt)
-        if self._scroll_to_new:
-            # Once per new question: bring its header to the top.
-            self._scroll_to_new = False
-            bar.setValue(self._last_header_top())
-        else:
-            # Re-rendering resets the view; keep it where the user scrolled.
-            bar.setValue(kept)
+        self._rendering = True  # scroll changes from here on are ours, not the user's
+        try:
+            self._current.setMarkdown(markdown)
+            style_code_blocks(self._current.document(), self._code_pt)
+            # Follow the newest line; otherwise stay where the user scrolled
+            # (re-rendering would reset the view to the top).
+            bar.setValue(bar.maximum() if self._follow else kept)
+        finally:
+            self._rendering = False
 
-    def _last_header_top(self) -> int:
-        doc = self._current.document()
-        block = doc.lastBlock()
-        while block.isValid():
-            if block.text().startswith(HEADER_PREFIX):
-                return round(doc.documentLayout().blockBoundingRect(block).top())
-            block = block.previous()
-        return 0
+    def _on_user_scroll(self, value: int) -> None:
+        if not self._rendering:
+            bar = self._current.verticalScrollBar()
+            self._follow = value >= bar.maximum() - 2
 
     def _render_history(self) -> None:
         self._history_view.setMarkdown("\n\n---\n\n".join(self._history))

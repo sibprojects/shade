@@ -321,8 +321,9 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   (Settings → Display, 2 pt smaller than the text by default).
 - **Follow-up questions:** answers stack up, newest at the bottom, and the
   last three go along with the next question, so a follow-up ("and for
-  writes?") builds on them. A new question scrolls to its start once; while
-  it streams, the view stays where you scroll. `Ctrl+Alt+D` clears the answers
+  writes?") builds on them. While an answer streams, the view follows it line
+  by line to the end; scroll up to read and it stays put, scroll back to the
+  bottom and it follows again. `Ctrl+Alt+D` clears the answers
   and starts a new topic.
 - **Quick actions** (buttons in the window above the transcript, hotkeys, or
   tray → **Quick actions**): make the last
