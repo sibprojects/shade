@@ -76,3 +76,37 @@ def test_note_box_enter_asks_ctrl_enter_only_adds(qtbot):
         assert sent[-1] == ("CTO is here", False)
         qtbot.keyClick(v.note, Qt.Key.Key_Return)  # empty: nothing sent
         assert len(sent) == 2
+
+
+def test_shift_enter_starts_a_new_line(qtbot):
+    for compact in (False, True):
+        v, sent = _view(qtbot, compact)
+        qtbot.keyClicks(v.note, "Use Go")
+        qtbot.keyClick(v.note, Qt.Key.Key_Return, Qt.KeyboardModifier.ShiftModifier)
+        qtbot.keyClicks(v.note, "no generics")
+        assert sent == []
+        assert v.note.text() == "Use Go\nno generics"
+        qtbot.keyClick(v.note, Qt.Key.Key_Return)
+        assert sent == [("Use Go\nno generics", True)]
+        assert v.note.text() == ""
+
+
+def test_note_box_grows_with_lines_up_to_a_limit(qtbot):
+    from shade.ui.hint_view import NOTE_MAX_LINES
+
+    for compact in (False, True):
+        v, _ = _view(qtbot, compact)
+        v.resize(600, 700)
+        v.show()
+        qtbot.waitExposed(v)
+        one = v.note.height()
+        qtbot.keyClick(v.note, Qt.Key.Key_Return, Qt.KeyboardModifier.ShiftModifier)
+        qtbot.waitUntil(lambda: v.note.height() > one)
+        two = v.note.height()
+        for _ in range(NOTE_MAX_LINES + 3):
+            qtbot.keyClick(v.note, Qt.Key.Key_Return, Qt.KeyboardModifier.ShiftModifier)
+        qtbot.wait(50)
+        top = v.note.height()
+        assert top <= one + (two - one) * (NOTE_MAX_LINES - 1) + 2
+        v.note.clear()
+        qtbot.waitUntil(lambda: v.note.height() == one)
