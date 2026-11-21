@@ -75,7 +75,7 @@ and **Apply** changes things without closing the window.
   </tr>
   <tr>
     <td align="center"><img src="docs/images/settings-model-grok-4.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
-    <td align="center"><img src="docs/images/settings-display-5.png" alt="Settings: Display tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-display-6.png" alt="Settings: Display tab" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Model — Grok (OpenAI-compatible)</b></td>
@@ -334,6 +334,10 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   (the language comes from the code fence), wrapped to the width of the
   window, so there is no sideways scrolling; its font size is set separately
   (Settings → Display, 2 pt smaller than the text by default).
+- **Font sizes:** Settings → Display sets the hint text, the code and the
+  transcript separately, for the window and the overlay each. In the window the
+  transcript size applies to both tabs, **Transcript** and **History** (4 pt
+  smaller than the hint by default).
 - **Follow-up questions:** answers stack up, newest at the bottom, and the
   last three go along with the next question, so a follow-up ("and for
   writes?") builds on them. While an answer streams, the view follows it line

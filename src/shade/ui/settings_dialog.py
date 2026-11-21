@@ -131,6 +131,14 @@ class SettingsDialog(QDialog):
         self.overlay_code_font.setRange(7, 40)
         self.overlay_code_font.setSuffix(" pt")
         self.overlay_code_font.setValue(settings.overlay_code_font_size)
+        self.window_transcript_font = QSpinBox()
+        self.window_transcript_font.setRange(7, 40)
+        self.window_transcript_font.setSuffix(" pt")
+        self.window_transcript_font.setValue(settings.window_transcript_font_size)
+        self.overlay_transcript_font = QSpinBox()
+        self.overlay_transcript_font.setRange(7, 40)
+        self.overlay_transcript_font.setSuffix(" pt")
+        self.overlay_transcript_font.setValue(settings.overlay_transcript_font_size)
         self.opacity = QSlider(Qt.Orientation.Horizontal)
         self.opacity.setRange(0, 100)
         self.opacity.setValue(round(settings.overlay_opacity * 100))
@@ -206,8 +214,10 @@ class SettingsDialog(QDialog):
         dt.addRow("Window theme", self.window_theme)
         dt.addRow("Window font size", self.window_font)
         dt.addRow("Window code font size", self.window_code_font)
+        dt.addRow("Window transcript and history font size", self.window_transcript_font)
         dt.addRow("Overlay font size", self.overlay_font)
         dt.addRow("Overlay code font size", self.overlay_code_font)
+        dt.addRow("Overlay transcript font size", self.overlay_transcript_font)
         dt.addRow("Overlay background", self.overlay_bg_button)
         dt.addRow("Overlay text", self.overlay_text_button)
         dt.addRow("Overlay background opacity", self.opacity)
@@ -373,6 +383,8 @@ class SettingsDialog(QDialog):
             overlay_font_size=self.overlay_font.value(),
             window_code_font_size=self.window_code_font.value(),
             overlay_code_font_size=self.overlay_code_font.value(),
+            window_transcript_font_size=self.window_transcript_font.value(),
+            overlay_transcript_font_size=self.overlay_transcript_font.value(),
             overlay_opacity=self.opacity.value() / 100,
             overlay_bg_color=self._overlay_bg,
             overlay_text_color=self._overlay_text,

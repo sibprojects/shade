@@ -201,6 +201,7 @@ class HintView(QWidget):
         font_size: int = 14,
         compact: bool = False,
         code_font_size: int | None = None,
+        transcript_font_size: int | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -258,7 +259,10 @@ class HintView(QWidget):
         self._code_pt = code_font_size or max(7, font_size - 2)
         self._current.setLineWrapMode(QTextBrowser.LineWrapMode.WidgetWidth)
         self._transcript_lines = transcript_lines or 3
+        self._font_pt = font_size
+        self._small_pt = transcript_font_size or max(7, font_size - 4)
         self.set_font_size(font_size)
+        self.set_transcript_font_size(self._small_pt)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -334,15 +338,22 @@ class HintView(QWidget):
     # ---- fonts ---------------------------------------------------------
 
     def set_font_size(self, pt: int) -> None:
-        """Hint text at `pt`; transcript and history 4 pt smaller."""
+        """Hint text at `pt` (the transcript and history have their own size)."""
+        self._font_pt = pt
         f = QFont(self._current.font())
         f.setPointSize(pt)
         self._current.setFont(f)
+        self._render_history()  # history code keeps its distance from the text
+
+    def set_transcript_font_size(self, pt: int) -> None:
+        """Transcript and history text at `pt`."""
+        self._small_pt = pt
         small = QFont(self._transcript.font())
-        small.setPointSize(max(8, pt - 4))
+        small.setPointSize(pt)
         self._transcript.setFont(small)
         self._history_view.setFont(small)
-        if getattr(self, "_compact", False):
+        self._render_history()
+        if self._compact:
             self._fit_transcript_strip()
 
     def set_code_font_size(self, pt: int) -> None:
@@ -498,8 +509,9 @@ class HintView(QWidget):
 
     def _render_history(self) -> None:
         self._history_view.setMarkdown("\n\n---\n\n".join(self._history))
-        # History text is 4 pt smaller than the hint; its code follows suit.
-        style_code_blocks(self._history_view.document(), max(7, self._code_pt - 4))
+        # History code is as much smaller than the history text as the hint's
+        # code is than the hint text.
+        style_code_blocks(self._history_view.document(), max(7, self._code_pt + self._small_pt - self._font_pt))
 
     def _update_status(self) -> None:
         bits = []
