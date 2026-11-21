@@ -88,6 +88,8 @@ class Settings:
     overlay_font_size: int = 12
     window_code_font_size: int = 12  # code blocks: 2 pt smaller than the text by default
     overlay_code_font_size: int = 10
+    window_transcript_font_size: int = 10  # transcript and history: 4 pt smaller by default
+    overlay_transcript_font_size: int = 8
     overlay_opacity: float = 0.85  # background alpha; text stays opaque
     overlay_bg_color: str = "#101218"
     overlay_text_color: str = "#f2f2f2"
@@ -168,6 +170,13 @@ def load_settings(path: Path) -> Settings:
     ):
         if code_key not in kwargs and text_key in kwargs:
             kwargs[code_key] = max(7, int(kwargs[text_key]) - 2)
+    # Files from before transcript font sizes existed: 4 pt smaller than the text, as it was.
+    for text_key, small_key in (
+        ("window_font_size", "window_transcript_font_size"),
+        ("overlay_font_size", "overlay_transcript_font_size"),
+    ):
+        if small_key not in kwargs and text_key in kwargs:
+            kwargs[small_key] = max(7, int(kwargs[text_key]) - 4)
     return Settings(**kwargs)
 
 

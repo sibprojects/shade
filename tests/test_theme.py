@@ -82,14 +82,14 @@ def test_font_size_defaults():
     assert s.overlay_font_size == 12
 
 
-def test_hint_view_font_size_applies_to_hint_and_transcript(qtbot):
+def test_hint_view_font_size_applies_to_the_hint(qtbot):
     from shade.ui.hint_view import HintView
 
     v = HintView()
     qtbot.addWidget(v)
     v.set_font_size(20)
     assert v._current.font().pointSize() == 20
-    assert v._transcript.font().pointSize() == 16
+    assert v._transcript.font().pointSize() == 10  # has its own setting now
 
 
 def test_dialog_edits_font_sizes(qtbot):

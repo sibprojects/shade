@@ -76,6 +76,7 @@ class Overlay(CaptureExcluded, QWidget):
         text_color: str = "#f2f2f2",
         font_size: int = 12,
         code_font_size: int | None = None,
+        transcript_font_size: int | None = None,
     ) -> None:
         super().__init__(None, BASE_FLAGS)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -84,7 +85,12 @@ class Overlay(CaptureExcluded, QWidget):
         self.setMinimumSize(240, 140)
         self.apply_style(bg_color, text_color, opacity)
         self.view = HintView(
-            transcript_lines=3, show_history=False, font_size=font_size, compact=True, code_font_size=code_font_size
+            transcript_lines=3,
+            show_history=False,
+            font_size=font_size,
+            compact=True,
+            code_font_size=code_font_size,
+            transcript_font_size=transcript_font_size,
         )
         layout = QVBoxLayout(self)
         layout.setContentsMargins(RESIZE_MARGIN, RESIZE_MARGIN, RESIZE_MARGIN, RESIZE_MARGIN)
