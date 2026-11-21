@@ -21,8 +21,9 @@ other side's screen.
 ## Screenshots
 
 **Hint window** — the current hint on top (say the first lines out loud);
-below it, tabs with the live **Transcript** and the **History** of earlier
-hints. The status line at the bottom shows the trigger, the model and the
+below it, the *Note to AI* box, a row of buttons (**Copy** the answer, quick
+actions, **Recap**) and tabs with the live **Transcript** and the **History**
+of earlier hints. The status line at the bottom shows the trigger, the model and the
 session cost.
 It has the program icon and the usual minimize, maximize and close buttons,
 but no taskbar button: minimize and close send it to the tray, and a click on
@@ -31,8 +32,8 @@ Settings → Display.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/hint-window-day-2.png" alt="Hint window, day theme" width="400"></td>
-    <td align="center"><img src="docs/images/hint-window-night-2.png" alt="Hint window, night theme" width="400"></td>
+    <td align="center"><img src="docs/images/hint-window-day-3.png" alt="Hint window, day theme" width="400"></td>
+    <td align="center"><img src="docs/images/hint-window-night-3.png" alt="Hint window, night theme" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Window — Day theme</b></td>
@@ -41,16 +42,17 @@ Settings → Display.
 </table>
 
 **Overlay** — the same hint on a semi-transparent layer over the call, with
-the last three transcript lines. Hidden from screen sharing. Drag its edges
-or corners to resize it, drag the status line at the bottom to move it;
+the last transcript lines, **Copy** and the *Note to AI* box. Hidden from
+screen sharing. Drag its edges or corners to resize it, drag the status line
+at the bottom (or anywhere with **Ctrl** held) to move it;
 `Ctrl+Alt+O` shows or hides it. Background
 color, text color and background opacity are set in Settings → Display;
 the text itself stays fully opaque.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/overlay-dark-2.png" alt="Overlay, dark background" width="400"></td>
-    <td align="center"><img src="docs/images/overlay-light-2.png" alt="Overlay, light background with dark text" width="400"></td>
+    <td align="center"><img src="docs/images/overlay-dark-3.png" alt="Overlay, dark background" width="400"></td>
+    <td align="center"><img src="docs/images/overlay-light-3.png" alt="Overlay, light background with dark text" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Overlay — dark background, light text</b></td>
@@ -64,16 +66,16 @@ and **Apply** changes things without closing the window.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/tray-menu-2.png" alt="Tray menu" height="290"></td>
-    <td align="center"><img src="docs/images/settings-model-3.png" alt="Settings: Model tab with Claude" width="400"></td>
+    <td align="center"><img src="docs/images/tray-menu-3.png" alt="Tray menu" height="330"></td>
+    <td align="center"><img src="docs/images/settings-model-4.png" alt="Settings: Model tab with Claude and a Grok fallback" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Tray menu</b></td>
-    <td align="center"><b>Model — Claude</b></td>
+    <td align="center"><b>Model — Claude, with Grok as the fallback</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/settings-model-grok-3.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
-    <td align="center"><img src="docs/images/settings-display-4.png" alt="Settings: Display tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-model-grok-4.png" alt="Settings: Model tab with the Grok preset" width="400"></td>
+    <td align="center"><img src="docs/images/settings-display-5.png" alt="Settings: Display tab" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Model — Grok (OpenAI-compatible)</b></td>
@@ -81,7 +83,7 @@ and **Apply** changes things without closing the window.
   </tr>
   <tr>
     <td align="center"><img src="docs/images/settings-audio-3.png" alt="Settings: Audio tab" width="400"></td>
-    <td align="center"><img src="docs/images/settings-hotkeys-3.png" alt="Settings: Hotkeys tab" width="400"></td>
+    <td align="center"><img src="docs/images/settings-hotkeys-4.png" alt="Settings: Hotkeys tab" width="400"></td>
   </tr>
   <tr>
     <td align="center"><b>Audio — devices, mic gain and level, speech model, pause, context</b></td>
