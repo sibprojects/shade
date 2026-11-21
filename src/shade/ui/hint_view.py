@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
+from PySide6.QtGui import QColor, QGuiApplication, QFont, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -42,6 +42,7 @@ CODE_GAP = 8  # px above and below a code block
 FEED_MAX = 20  # earlier answers kept on screen
 OVERLAY_TRANSCRIPT_LINES = 200
 SPLIT_GRAB = 5  # px around the overlay's 1 px hint/transcript border that grab it
+COPIED_MS = 1500  # how long the Copy button says "Copied"
 HEADER_PREFIX = "Q:"  # starts each question line in the answer feed
 
 
@@ -172,6 +173,7 @@ class HintView(QWidget):
         self._follow = True
         self._rendering = False
         self._history: list[str] = []
+        self._last_answer = ""  # last finished answer, kept after a new topic
         self._model = ""
         self._total_cost = 0.0
 
@@ -193,6 +195,20 @@ class HintView(QWidget):
         self._history_view = QTextBrowser()
         self.note = NoteEdit()
         self.note.submitted.connect(self.note_submitted)
+        # Copy, left of the note box: the last answer to the clipboard.
+        self.copy_button = QPushButton("Copy")
+        self.copy_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.copy_button.setToolTip("Copy the last answer")
+        self.copy_button.clicked.connect(self.copy_answer)
+        self._copied_timer = QTimer(self)
+        self._copied_timer.setSingleShot(True)
+        self._copied_timer.timeout.connect(lambda: self.copy_button.setText("Copy"))
+        self.note_row = QWidget()
+        note_layout = QHBoxLayout(self.note_row)
+        note_layout.setContentsMargins(0, 0, 0, 0)
+        note_layout.setSpacing(4)
+        note_layout.addWidget(self.copy_button)
+        note_layout.addWidget(self.note, 1)
 
         self._transcript = QPlainTextEdit()
         self._transcript.setReadOnly(True)
@@ -237,7 +253,7 @@ class HintView(QWidget):
             self._fit_transcript_strip()
             self.split.setSizes([1000, self._strip_height()])
             layout.addWidget(self.split, 1)
-            layout.addWidget(self.note)
+            layout.addWidget(self.note_row)
             layout.addWidget(self._status)  # trigger · model · cost, at the bottom
         else:
             # Window: current hint on top; transcript and history as tabs below.
@@ -262,7 +278,7 @@ class HintView(QWidget):
             lower_layout.setContentsMargins(0, 0, 0, 0)
             lower_layout.setSpacing(0)
             lower_layout.addSpacing(4)
-            lower_layout.addWidget(self.note)
+            lower_layout.addWidget(self.note_row)
             lower_layout.addWidget(self.action_bar)
             lower_layout.addWidget(self.tabs, 1)
             self.split = QSplitter(Qt.Orientation.Vertical)
@@ -382,12 +398,24 @@ class HintView(QWidget):
             if e.id == self._current_id:
                 q = self._current_question or "(screenshot)"
                 self._history.insert(0, f"**Q:** {q}\n\n{self.current_text()}")
+                if self.current_text():
+                    self._last_answer = self.current_text()
                 self._render_history()
             self._update_status()
         elif isinstance(e, HintError):
             self.show_error(e.message)
         elif isinstance(e, Status):
             self._status.setText(e.message)
+
+    def copy_answer(self) -> None:
+        """The answer on screen (even while it streams), else the last finished one."""
+        text = self.current_text() or self._last_answer
+        if not text:
+            self._status.setText("No answer yet.")
+            return
+        QGuiApplication.clipboard().setText(text)
+        self.copy_button.setText("Copied")
+        self._copied_timer.start(COPIED_MS)
 
     def show_error(self, message: str) -> None:
         self._error.setText(message)
