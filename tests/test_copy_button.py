@@ -1,4 +1,4 @@
-"""Copy button, left of the note box in the window and the overlay: last answer to the clipboard."""
+"""Copy button (window: first in the button row; overlay: left of the note box): last answer to the clipboard."""
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
@@ -61,13 +61,32 @@ def test_button_says_copied(qtbot):
         qtbot.waitUntil(lambda: v.copy_button.text() == "Copy", timeout=3000)
 
 
-def test_button_sits_left_of_the_note(qtbot):
-    for v in views(qtbot):
-        v.resize(600, 700)
-        v.show()
-        qtbot.waitExposed(v)
-        b = v.copy_button.mapTo(v, v.copy_button.rect().center())
-        n = v.note.mapTo(v, v.note.rect().center())
-        assert b.x() < n.x()
-        assert abs(b.y() - n.y()) <= 4
-        assert v.copy_button.focusPolicy() == Qt.FocusPolicy.NoFocus
+def _center(v, w):
+    return w.mapTo(v, w.rect().center())
+
+
+def _shown(qtbot, v):
+    v.resize(600, 700)
+    v.show()
+    qtbot.waitExposed(v)
+
+
+def test_window_button_is_first_in_the_button_row(qtbot):
+    v = HintView()
+    qtbot.addWidget(v)
+    _shown(qtbot, v)
+    assert v.copy_button.parent() is v.action_bar
+    b, first = _center(v, v.copy_button), _center(v, v.action_buttons[0])
+    assert b.x() < first.x()
+    assert b.y() == first.y()
+    assert v.copy_button.focusPolicy() == Qt.FocusPolicy.NoFocus
+
+
+def test_overlay_button_sits_left_of_the_note(qtbot):
+    v = HintView(compact=True, transcript_lines=3)
+    qtbot.addWidget(v)
+    _shown(qtbot, v)
+    b, n = _center(v, v.copy_button), _center(v, v.note)
+    assert b.x() < n.x()
+    assert abs(b.y() - n.y()) <= 4
+    assert v.copy_button.focusPolicy() == Qt.FocusPolicy.NoFocus

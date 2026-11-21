@@ -349,7 +349,7 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   follow it (e.g. "the interviewer is the CTO"); **Shift+Enter** starts a new
   line in the note (the box grows up to 5 lines). Notes are shown as *Note* in
   the transcript and saved with it.
-- **Copy** (left of the *Note to AI* line, window and overlay): puts the last
+- **Copy** (first in the button row in the window; left of the *Note to AI* line in the overlay): puts the last
   answer on the clipboard as Markdown, even while it is still streaming.
 - **What did I miss** (`Ctrl+Alt+R`): 3–5 bullets on the last 5 minutes of the
   call (topics, questions to you and whether you answered, tasks) and what to
