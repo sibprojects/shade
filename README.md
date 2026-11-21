@@ -348,6 +348,8 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
   (e.g. "they want it in Go"); **Ctrl+Enter** only adds it, so later answers
   follow it (e.g. "the interviewer is the CTO"). Notes are shown as *Note* in
   the transcript and saved with it.
+- **Copy** (left of the *Note to AI* line, window and overlay): puts the last
+  answer on the clipboard as Markdown, even while it is still streaming.
 - **What did I miss** (`Ctrl+Alt+R`): 3–5 bullets on the last 5 minutes of the
   call (topics, questions to you and whether you answered, tasks) and what to
   say next. A recap is not sent along with later questions.

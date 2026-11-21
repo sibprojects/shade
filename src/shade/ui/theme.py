@@ -49,4 +49,7 @@ def overlay_stylesheet(bg: str, text: str, opacity: float) -> str:
         f"QLabel {{ color: {text}; background: {rgba}; border-radius: 4px; padding: 2px 6px; }}"
         f"QLineEdit {{ color: {text}; background: {rgba}; border: 1px solid rgba(255,255,255,40);"
         " border-radius: 4px; padding: 2px 6px; }"
+        f"QPushButton {{ color: {text}; background: {rgba}; border: 1px solid rgba(255,255,255,40);"
+        " border-radius: 4px; padding: 2px 8px; }"
+        "QPushButton:hover { border-color: rgba(255,255,255,120); }"
     )
