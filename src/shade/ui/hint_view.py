@@ -7,7 +7,7 @@ from PySide6.QtGui import QColor, QGuiApplication, QFont, QTextCharFormat, QText
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QLineEdit,
+    QSizePolicy,
     QPlainTextEdit,
     QPushButton,
     QSplitter,
@@ -42,6 +42,7 @@ CODE_GAP = 8  # px above and below a code block
 FEED_MAX = 20  # earlier answers kept on screen
 OVERLAY_TRANSCRIPT_LINES = 200
 SPLIT_GRAB = 5  # px around the overlay's 1 px hint/transcript border that grab it
+NOTE_MAX_LINES = 5  # the note box grows up to this many lines, then scrolls
 COPIED_MS = 1500  # how long the Copy button says "Copied"
 HEADER_PREFIX = "Q:"  # starts each question line in the answer feed
 
@@ -128,17 +129,58 @@ def _entry_markdown(question: str, answer: str) -> str:
     return f"**{HEADER_PREFIX}** {q}\n\n{answer}"
 
 
-class NoteEdit(QLineEdit):
-    """One line to type a note to the AI: Enter asks now, Ctrl+Enter only adds it."""
+class NoteEdit(QPlainTextEdit):
+    """Box to type a note to the AI: Enter asks now, Ctrl+Enter only adds it,
+    Shift+Enter starts a new line. One line high; grows with the text up to
+    NOTE_MAX_LINES, then scrolls."""
 
     submitted = Signal(str, bool)  # text, ask now
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setPlaceholderText("Note to AI — Enter: ask now · Ctrl+Enter: just add to the context")
+        self.setObjectName("note")
+        self.setPlaceholderText(
+            "Note to AI — Enter: ask now · Ctrl+Enter: just add to the context · Shift+Enter: new line"
+        )
+        self.setTabChangesFocus(True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.document().setDocumentMargin(2)
+        self.textChanged.connect(self._fit_height)
+        self._fit_height()
+
+    def text(self) -> str:
+        return self.toPlainText()
+
+    def _fit_height(self, *_) -> None:
+        # A plain-text document's height is its number of laid-out lines
+        # (wrapped lines included); blocks not laid out yet count as one.
+        doc = self.document()
+        lines = max(1, round(doc.size().height()), doc.blockCount())
+        shown = min(lines, NOTE_MAX_LINES)
+        self.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded if lines > NOTE_MAX_LINES else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        # Border and padding from the stylesheet: what the frame adds around the text area.
+        m = self.contentsMargins()
+        height = shown * self.fontMetrics().lineSpacing() + 2 * doc.documentMargin() + m.top() + m.bottom()
+        self.setFixedHeight(round(height))
+
+    def changeEvent(self, e):  # noqa: N802
+        super().changeEvent(e)
+        if e.type() in (QEvent.Type.FontChange, QEvent.Type.StyleChange):
+            self._fit_height()
+
+    def showEvent(self, e):  # noqa: N802
+        super().showEvent(e)
+        self._fit_height()
 
     def keyPressEvent(self, e):  # noqa: N802
         if e.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if e.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                self.insertPlainText("\n")  # soft Enter: a new line in the note
+                return
             text = self.text().strip()
             if text:
                 ask = not (e.modifiers() & Qt.KeyboardModifier.ControlModifier)

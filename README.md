@@ -346,7 +346,8 @@ the Hugging Face cache. A tray icon appears; when its tooltip says
 - **Notes to the AI:** type into the *Note to AI* line (window and overlay).
   **Enter** adds the note to the transcript and gets an answer right away
   (e.g. "they want it in Go"); **Ctrl+Enter** only adds it, so later answers
-  follow it (e.g. "the interviewer is the CTO"). Notes are shown as *Note* in
+  follow it (e.g. "the interviewer is the CTO"); **Shift+Enter** starts a new
+  line in the note (the box grows up to 5 lines). Notes are shown as *Note* in
   the transcript and saved with it.
 - **Copy** (left of the *Note to AI* line, window and overlay): puts the last
   answer on the clipboard as Markdown, even while it is still streaming.
