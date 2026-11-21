@@ -237,7 +237,8 @@ class HintView(QWidget):
         self._history_view = QTextBrowser()
         self.note = NoteEdit()
         self.note.submitted.connect(self.note_submitted)
-        # Copy, left of the note box: the last answer to the clipboard.
+        # Copy: the last answer to the clipboard. Window: first in the button
+        # row; overlay (no button row): left of the note box.
         self.copy_button = QPushButton("Copy")
         self.copy_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.copy_button.setToolTip("Copy the last answer")
@@ -245,12 +246,6 @@ class HintView(QWidget):
         self._copied_timer = QTimer(self)
         self._copied_timer.setSingleShot(True)
         self._copied_timer.timeout.connect(lambda: self.copy_button.setText("Copy"))
-        self.note_row = QWidget()
-        note_layout = QHBoxLayout(self.note_row)
-        note_layout.setContentsMargins(0, 0, 0, 0)
-        note_layout.setSpacing(4)
-        note_layout.addWidget(self.copy_button)
-        note_layout.addWidget(self.note, 1)
 
         self._transcript = QPlainTextEdit()
         self._transcript.setReadOnly(True)
@@ -295,7 +290,11 @@ class HintView(QWidget):
             self._fit_transcript_strip()
             self.split.setSizes([1000, self._strip_height()])
             layout.addWidget(self.split, 1)
-            layout.addWidget(self.note_row)
+            note_row = QHBoxLayout()
+            note_row.setSpacing(4)
+            note_row.addWidget(self.copy_button)
+            note_row.addWidget(self.note, 1)
+            layout.addLayout(note_row)
             layout.addWidget(self._status)  # trigger · model · cost, at the bottom
         else:
             # Window: current hint on top; transcript and history as tabs below.
@@ -303,11 +302,12 @@ class HintView(QWidget):
             self.tabs.addTab(self._transcript, "Transcript")
             if show_history:
                 self.tabs.addTab(self._history_view, "History")
-            # Quick action buttons, centered right above the tabs.
+            # Copy and the quick action buttons, centered right above the tabs.
             self.action_bar = QWidget()
             row = QHBoxLayout(self.action_bar)
             row.setContentsMargins(0, 4, 0, 4)
             row.addStretch(1)
+            row.addWidget(self.copy_button)
             for name, label in ACTION_BUTTONS:
                 button = QPushButton(label)
                 button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -320,7 +320,7 @@ class HintView(QWidget):
             lower_layout.setContentsMargins(0, 0, 0, 0)
             lower_layout.setSpacing(0)
             lower_layout.addSpacing(4)
-            lower_layout.addWidget(self.note_row)
+            lower_layout.addWidget(self.note)
             lower_layout.addWidget(self.action_bar)
             lower_layout.addWidget(self.tabs, 1)
             self.split = QSplitter(Qt.Orientation.Vertical)

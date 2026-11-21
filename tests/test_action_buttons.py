@@ -33,7 +33,7 @@ def test_buttons_sit_centered_above_the_tabs(qtbot):
     bar = v.action_bar
     tabs_top = v.tabs.mapTo(v, v.tabs.rect().topLeft()).y()
     bar_rect = bar.geometry()
-    first = v.action_buttons[0].mapTo(v, v.action_buttons[0].rect().topLeft()).x()
+    first = v.copy_button.mapTo(v, v.copy_button.rect().topLeft()).x()  # Copy starts the row
     last_btn = v.action_buttons[-1]
     last = last_btn.mapTo(v, last_btn.rect().topRight()).x()
     assert v.action_buttons[0].mapTo(v, v.action_buttons[0].rect().bottomLeft()).y() < tabs_top
